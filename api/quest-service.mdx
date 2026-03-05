@@ -1,52 +1,44 @@
 ---
 title: "QuestService"
-description: "Core service for managing quests with caching and search capabilities"
+description: "Core service for managing quests with localStorage persistence and reactive state management"
 ---
 
 ## Overview
 
-The `QuestService` is the primary service for managing quests in the Tareas application. It provides optimized quest retrieval with built-in caching, pagination support, and local search functionality.
+The `QuestService` is the primary service for managing quests in the Tareas application. It provides complete CRUD operations, localStorage persistence, and reactive state management using RxJS BehaviorSubject.
+
+Located at: `src/app/services/quest.service.ts`
 
 ## Features
 
-- Cached quest retrieval for improved performance
-- Pagination support for large quest lists
-- Category-based filtering
-- Local search functionality
-- Observable-based architecture using RxJS
+- Full CRUD operations (Create, Read, Update, Delete)
+- Automatic localStorage persistence
+- Reactive state management with BehaviorSubject
+- Category, status, and difficulty filtering
+- Search functionality
+- Quest statistics and analytics
+- Quest status management (pending, in-progress, completed)
 
 ---
 
-## Methods
+## Core Methods
 
 ### getQuests()
 
-Retrieves quests with pagination and optional category filtering. Results are cached to avoid redundant queries.
+Returns an Observable stream of all quests. Subscribe to this to receive real-time updates when quests change.
 
 ```typescript
-getQuests(page?: number, pageSize?: number, category?: string): Observable<Quest[]>
+getQuests(): Observable<Quest[]>
 ```
 
-<ParamField path="page" type="number" default="0">
-  The page number for pagination (zero-based)
-</ParamField>
-
-<ParamField path="pageSize" type="number" default="20">
-  Number of quests to return per page
-</ParamField>
-
-<ParamField path="category" type="string" optional>
-  Filter quests by category. If omitted, returns quests from all categories
-</ParamField>
-
 <ResponseField name="Observable<Quest[]>" type="Observable">
-  Returns an Observable stream of Quest arrays. Results are cached using `shareReplay(1)` for multiple subscribers
+  Observable stream that emits the current quest array whenever it changes
 </ResponseField>
 
 #### Usage Example
 
 ```typescript
-import { QuestService } from './common/services/quest.service';
+import { QuestService } from './services/quest.service';
 import { Component, OnInit } from '@angular/core';
 
 @Component({
@@ -54,186 +46,470 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './quest-list.component.html'
 })
 export class QuestListComponent implements OnInit {
-  quests: Quest[] = [];
+  quests$ = this.questService.getQuests();
 
   constructor(private questService: QuestService) {}
-
-  ngOnInit() {
-    // Get first page of quests (20 items)
-    this.questService.getQuests().subscribe(quests => {
-      this.quests = quests;
-    });
-
-    // Get second page with 10 items per page
-    this.questService.getQuests(1, 10).subscribe(quests => {
-      this.quests = [...this.quests, ...quests];
-    });
-
-    // Filter by category
-    this.questService.getQuests(0, 20, 'dev').subscribe(quests => {
-      this.quests = quests;
-    });
-  }
 }
 ```
+
+---
+
+### getAllQuests()
+
+Returns all quests synchronously as an array (current snapshot).
+
+```typescript
+getAllQuests(): Quest[]
+```
+
+<ResponseField name="Quest[]" type="array">
+  Current array of all quests
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const allQuests = this.questService.getAllQuests();
+console.log(`Total quests: ${allQuests.length}`);
+```
+
+---
+
+### getQuestById()
+
+Retrieves a single quest by its unique ID.
+
+```typescript
+getQuestById(id: string): Quest | undefined
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the quest
+</ParamField>
+
+<ResponseField name="Quest | undefined" type="Quest">
+  The quest object if found, undefined otherwise
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const quest = this.questService.getQuestById('quest-123');
+if (quest) {
+  console.log(quest.title);
+}
+```
+
+---
+
+### createQuest()
+
+Creates a new quest and persists it to localStorage.
+
+```typescript
+createQuest(questData: Omit<Quest, 'id' | 'createdAt'>): Quest
+```
+
+<ParamField path="questData" type="Omit<Quest, 'id' | 'createdAt'>" required>
+  Quest data without id and createdAt (these are generated automatically)
+</ParamField>
+
+<ResponseField name="Quest" type="Quest">
+  The newly created quest with generated id and createdAt timestamp
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const newQuest = this.questService.createQuest({
+  title: 'Build API Documentation',
+  description: 'Create comprehensive API docs',
+  category: 'dev',
+  difficulty: 2,
+  xpReward: 500,
+  status: 'pending',
+  icon: 'code',
+  colorClass: 'realm-dev',
+  glowClass: 'glow-dev',
+  kingdom: 'Development',
+  dueDate: '2024-12-31',
+  reward: 'Knowledge gained',
+  badges: [],
+  tags: ['documentation', 'api']
+});
+```
+
+---
+
+### updateQuest()
+
+Updates an existing quest with partial data.
+
+```typescript
+updateQuest(id: string, updates: Partial<Quest>): Quest | null
+```
+
+<ParamField path="id" type="string" required>
+  The ID of the quest to update
+</ParamField>
+
+<ParamField path="updates" type="Partial<Quest>" required>
+  Object containing the fields to update
+</ParamField>
+
+<ResponseField name="Quest | null" type="Quest">
+  The updated quest object, or null if quest not found
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const updated = this.questService.updateQuest('quest-123', {
+  title: 'Updated Title',
+  difficulty: 3,
+  status: 'in-progress'
+});
+```
+
+---
+
+### deleteQuest()
+
+Deletes a quest by ID and removes it from localStorage.
+
+```typescript
+deleteQuest(id: string): boolean
+```
+
+<ParamField path="id" type="string" required>
+  The ID of the quest to delete
+</ParamField>
+
+<ResponseField name="boolean" type="boolean">
+  Returns true if quest was deleted, false if quest not found
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const wasDeleted = this.questService.deleteQuest('quest-123');
+if (wasDeleted) {
+  console.log('Quest deleted successfully');
+}
+```
+
+---
+
+## Status Management
+
+### updateQuestStatus()
+
+Updates only the status field of a quest.
+
+```typescript
+updateQuestStatus(id: string, status: 'pending' | 'in-progress' | 'completed'): Quest | null
+```
+
+<ParamField path="id" type="string" required>
+  The ID of the quest
+</ParamField>
+
+<ParamField path="status" type="'pending' | 'in-progress' | 'completed'" required>
+  The new status value
+</ParamField>
+
+<ResponseField name="Quest | null" type="Quest">
+  The updated quest or null if not found
+</ResponseField>
+
+---
+
+### completeQuest()
+
+Marks a quest as completed and sets completion timestamp.
+
+```typescript
+completeQuest(id: string): Quest | null
+```
+
+<ParamField path="id" type="string" required>
+  The ID of the quest to complete
+</ParamField>
+
+<ResponseField name="Quest | null" type="Quest">
+  The completed quest with status='completed', completed=true, and completedAt timestamp
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const completed = this.questService.completeQuest('quest-123');
+if (completed) {
+  console.log(`Quest completed at: ${completed.completedAt}`);
+}
+```
+
+---
+
+## Filtering Methods
+
+### getQuestsByCategory()
+
+Returns all quests for a specific category.
+
+```typescript
+getQuestsByCategory(category: string): Quest[]
+```
+
+<ParamField path="category" type="string" required>
+  The category to filter by (e.g., 'dev', 'design', 'marketing')
+</ParamField>
+
+<ResponseField name="Quest[]" type="array">
+  Array of quests matching the category
+</ResponseField>
+
+---
+
+### getQuestsByStatus()
+
+Returns all quests with a specific status.
+
+```typescript
+getQuestsByStatus(status: 'pending' | 'in-progress' | 'completed'): Quest[]
+```
+
+<ParamField path="status" type="'pending' | 'in-progress' | 'completed'" required>
+  The status to filter by
+</ParamField>
+
+<ResponseField name="Quest[]" type="array">
+  Array of quests matching the status
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+const pendingQuests = this.questService.getQuestsByStatus('pending');
+const completedQuests = this.questService.getQuestsByStatus('completed');
+```
+
+---
+
+### getQuestsByDifficulty()
+
+Returns all quests with a specific difficulty level.
+
+```typescript
+getQuestsByDifficulty(difficulty: number): Quest[]
+```
+
+<ParamField path="difficulty" type="number" required>
+  Difficulty level (1=Easy, 2=Medium, 3=Hard)
+</ParamField>
+
+<ResponseField name="Quest[]" type="array">
+  Array of quests matching the difficulty level
+</ResponseField>
 
 ---
 
 ### searchQuests()
 
-Performs a local search on cached quests, filtering by title or description. This method is optimized for client-side searching to avoid unnecessary server queries.
+Searches quests by title or description (case-insensitive).
 
 ```typescript
-searchQuests(query: string, cachedQuests: Quest[]): Quest[]
+searchQuests(query: string): Quest[]
 ```
 
 <ParamField path="query" type="string" required>
-  The search term to filter quests. Search is case-insensitive and matches against both title and description
-</ParamField>
-
-<ParamField path="cachedQuests" type="Quest[]" required>
-  Array of quests to search through (typically from a previous `getQuests()` call)
+  Search term to match against title and description
 </ParamField>
 
 <ResponseField name="Quest[]" type="array">
-  Returns a filtered array of quests matching the search query
+  Array of quests matching the search query
 </ResponseField>
 
 #### Usage Example
 
 ```typescript
-import { QuestService } from './common/services/quest.service';
-import { Component } from '@angular/core';
-
-@Component({
-  selector: 'app-search',
-  templateUrl: './search.component.html'
-})
-export class SearchComponent {
-  allQuests: Quest[] = [];
-  filteredQuests: Quest[] = [];
-
-  constructor(private questService: QuestService) {
-    // Load all quests first
-    this.questService.getQuests(0, 100).subscribe(quests => {
-      this.allQuests = quests;
-      this.filteredQuests = quests;
-    });
-  }
-
-  onSearchChange(searchTerm: string) {
-    if (searchTerm) {
-      this.filteredQuests = this.questService.searchQuests(
-        searchTerm,
-        this.allQuests
-      );
-    } else {
-      this.filteredQuests = this.allQuests;
-    }
-  }
-}
+const results = this.questService.searchQuests('API');
+// Returns quests with 'API' in title or description
 ```
 
 ---
 
-### clearCache()
+## Analytics
 
-Clears the internal cache of quest queries. Use this when you need to force a refresh of quest data (e.g., after creating or updating a quest).
+### getQuestStats()
+
+Returns comprehensive statistics about all quests.
 
 ```typescript
-clearCache(): void
+getQuestStats(): {
+  total: number;
+  completed: number;
+  pending: number;
+  inProgress: number;
+  totalXP: number;
+  completedXP: number;
+}
 ```
 
-<ResponseField name="void" type="void">
-  This method does not return a value. It clears all cached quest queries.
+<ResponseField name="total" type="number">
+  Total number of quests
+</ResponseField>
+
+<ResponseField name="completed" type="number">
+  Number of completed quests
+</ResponseField>
+
+<ResponseField name="pending" type="number">
+  Number of pending quests
+</ResponseField>
+
+<ResponseField name="inProgress" type="number">
+  Number of in-progress quests
+</ResponseField>
+
+<ResponseField name="totalXP" type="number">
+  Sum of XP rewards from all quests
+</ResponseField>
+
+<ResponseField name="completedXP" type="number">
+  Sum of XP rewards from completed quests
 </ResponseField>
 
 #### Usage Example
 
 ```typescript
-import { QuestService } from './common/services/quest.service';
-import { Component } from '@angular/core';
+const stats = this.questService.getQuestStats();
+console.log(`Completion rate: ${(stats.completed / stats.total * 100).toFixed(1)}%`);
+console.log(`XP earned: ${stats.completedXP} / ${stats.totalXP}`);
+```
+
+---
+
+## Utility Methods
+
+### clearAllQuests()
+
+Deletes all quests from memory and localStorage (useful for development/testing).
+
+```typescript
+clearAllQuests(): void
+```
+
+<Warning>
+  This permanently deletes all quests. Use with caution.
+</Warning>
+
+---
+
+### importQuests()
+
+Imports an array of quests, replacing all existing quests.
+
+```typescript
+importQuests(quests: Quest[]): void
+```
+
+<ParamField path="quests" type="Quest[]" required>
+  Array of quest objects to import
+</ParamField>
+
+#### Usage Example
+
+```typescript
+// Import quests from backup
+const backup: Quest[] = JSON.parse(backupData);
+this.questService.importQuests(backup);
+```
+
+---
+
+## LocalStorage
+
+The QuestService automatically persists all changes to localStorage under the key `'app_quests'`.
+
+- **Automatic saving**: Every create, update, or delete operation saves to localStorage
+- **Automatic loading**: Quests are loaded from localStorage on service initialization
+- **Date parsing**: Dates (createdAt, updatedAt, completedAt) are automatically parsed when loading
+
+<Tip>
+  No manual save/load needed - the service handles persistence automatically.
+</Tip>
+
+---
+
+## Complete Usage Example
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { QuestService } from './services/quest.service';
+import { Quest } from './common/models/quest.model';
 
 @Component({
   selector: 'app-quest-manager',
   templateUrl: './quest-manager.component.html'
 })
-export class QuestManagerComponent {
+export class QuestManagerComponent implements OnInit {
+  quests$ = this.questService.getQuests();
+  stats$ = this.questService.getQuests().pipe(
+    map(() => this.questService.getQuestStats())
+  );
+
   constructor(private questService: QuestService) {}
 
-  createNewQuest(quest: Quest) {
-    // After creating a new quest
-    this.saveQuest(quest).then(() => {
-      // Clear cache to ensure fresh data on next fetch
-      this.questService.clearCache();
-      
-      // Reload quests
-      this.questService.getQuests().subscribe(quests => {
-        console.log('Fresh quests loaded:', quests);
-      });
+  ngOnInit() {
+    // Subscribe to quest changes
+    this.quests$.subscribe(quests => {
+      console.log('Current quests:', quests);
     });
   }
 
-  refreshQuests() {
-    // Force refresh by clearing cache first
-    this.questService.clearCache();
-    this.questService.getQuests().subscribe(quests => {
-      console.log('Refreshed quests:', quests);
+  createQuest() {
+    this.questService.createQuest({
+      title: 'New Quest',
+      description: 'Quest description',
+      category: 'dev',
+      difficulty: 2,
+      xpReward: 300,
+      status: 'pending',
+      icon: 'code',
+      colorClass: 'realm-dev',
+      glowClass: 'glow-dev',
+      kingdom: 'Development',
+      dueDate: '2024-12-31',
+      reward: 'Skill boost',
+      badges: [],
+      tags: []
     });
+  }
+
+  completeQuest(id: string) {
+    this.questService.completeQuest(id);
+  }
+
+  deleteQuest(id: string) {
+    this.questService.deleteQuest(id);
+  }
+
+  searchQuests(term: string) {
+    return this.questService.searchQuests(term);
   }
 }
 ```
 
 ---
 
-## Quest Model
+## Related
 
-The `Quest` interface represents a quest object:
-
-```typescript
-interface Quest {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  icon: string;
-  colorClass: string;
-  glowClass: string;
-  kingdom: string;
-  dueDate: string;
-  difficulty: number;
-  xpReward: number;
-  reward: string;
-  badges: string[];
-  tags: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
-  progress?: number;
-  timeLeft?: string;
-  status?: 'pending' | 'in-progress' | 'completed';
-  completed?: boolean;
-  completedAt?: Date;
-  difficultyArray?: boolean[];
-}
-```
-
----
-
-## Caching Behavior
-
-The `QuestService` implements an intelligent caching mechanism:
-
-- Cache keys are generated based on `page`, `pageSize`, and `category` parameters
-- Each unique combination of parameters has its own cache entry
-- Cached observables use `shareReplay(1)` to share results among multiple subscribers
-- Cache persists until explicitly cleared with `clearCache()`
-
-**Cache Key Format:** `quests_{page}_{pageSize}_{category}`
-
-<Tip>
-  Call `clearCache()` after creating, updating, or deleting quests to ensure users see the latest data.
-</Tip>
-
-<Warning>
-  The current implementation uses mock data. In production, this will be replaced with Firestore queries.
-</Warning>
+<CardGroup cols={2}>
+  <Card title="Quest Model" icon="shapes" href="/api/quest-model">
+    Quest interface definition
+  </Card>
+  <Card title="Category Service" icon="folder" href="/api/category-service">
+    Manage quest categories
+  </Card>
+</CardGroup>
