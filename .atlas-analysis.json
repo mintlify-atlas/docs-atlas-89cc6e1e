@@ -1,0 +1,105 @@
+{
+  "projectType": "frontend",
+  "projectName": "Tareas - Gamified Task Manager",
+  "projectDescription": "Mobile task management app with gamification mechanics, built with Ionic and Angular",
+  "theme": "almond",
+  "primaryColor": "#277bfc",
+  "lightColor": "#8bbcfc",
+  "darkColor": "#041c3c",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/quests",
+              "concepts/categories",
+              "concepts/gamification"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/quest-cards",
+              "components/quest-form",
+              "components/category-selector",
+              "components/shared-components"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-quests",
+              "guides/managing-categories",
+              "guides/gestures",
+              "guides/styling"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Services",
+            "pages": [
+              "api/quest-service",
+              "api/category-service",
+              "api/quest-shared-service"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "api/quest-model",
+              "api/category-model",
+              "api/component-state-model"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Deployment",
+        "groups": [
+          {
+            "group": "Build & Deploy",
+            "pages": [
+              "deployment/web-build",
+              "deployment/android",
+              "deployment/ios"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Gamified task management with XP and difficulty levels",
+    "Swipe gestures for completing and deleting tasks",
+    "Category-based organization with visual themes",
+    "Glassmorphism and neon visual effects",
+    "LocalStorage persistence",
+    "Native mobile support via Capacitor"
+  ],
+  "publicApiSurface": [
+    "QuestService.createQuest()",
+    "QuestService.updateQuest()",
+    "QuestService.deleteQuest()",
+    "QuestService.getQuestById()",
+    "QuestService.getAllQuests()",
+    "CategoryService",
+    "QuestCardsComponent",
+    "NewQuestComponent",
+    "CardCategoryHorizontallyComponent"
+  ]
+}
