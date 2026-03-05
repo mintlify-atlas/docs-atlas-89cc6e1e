@@ -1,0 +1,412 @@
+---
+title: "Quest Form Component"
+description: "Create and edit quests with validation, category selection, and difficulty settings"
+---
+
+## Overview
+
+The `NewQuestComponent` provides a comprehensive form for creating and editing quests. It includes validation, category selection, difficulty settings, and integrates with the quest management system.
+
+## Features
+
+- **Create & Edit Modes**: Single component handles both creating new quests and editing existing ones
+- **Form Validation**: Real-time validation for required fields
+- **Category Selection**: Visual category picker using horizontal cards
+- **Difficulty Levels**: Interactive flame icons for setting difficulty (1-3)
+- **Tag Management**: Add and remove custom tags
+- **Loading States**: Shows loading spinner during save operations
+- **Toast Notifications**: User feedback for success/error states
+
+## Component Definition
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    @Component({
+      selector: 'app-new-quest',
+      templateUrl: './new-quest.component.html',
+      standalone: true,
+      imports: [
+        CommonModule,
+        FormsModule,
+        CardCategoryHorizontallyComponent,
+        IonicModule
+      ]
+    })
+    export class NewQuestComponent implements OnInit {
+      @Input() questToEdit?: Quest;
+      
+      questData: Quest = {
+        id: crypto.randomUUID(),
+        title: '',
+        description: '',
+        category: 'frontend',
+        difficulty: 2,
+        xpReward: 250,
+        status: 'pending'
+      };
+      
+      isEditing: boolean = false;
+      editingQuestId: string | null = null;
+    }
+    ```
+  </Tab>
+  <Tab title="Template">
+    ```html
+    <ion-content class="quest-content flex-container">
+      <ion-header class="realm-header">
+        <ion-toolbar>
+          <ion-title>{{ isEditing ? 'EDITAR MISIÓN' : 'FORJAR MISIÓN' }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <div class="card-wrapper">
+        <ion-card class="realm-card neon-border realm-blue">
+          <ion-card-content>
+            <!-- Quest Name -->
+            <div class="form-field mb-6">
+              <ion-label class="field-label">Nombre de la Misión</ion-label>
+              <input type="text" [(ngModel)]="questData.title" />
+            </div>
+
+            <!-- Category Selection -->
+            <app-card-category-horizontally 
+              [multiple]="false"
+              [selectedCategoryName]="getCategoryDisplayName()"
+              (categorySelected)="onCategorySelected($event)">
+            </app-card-category-horizontally>
+
+            <!-- Difficulty -->
+            <div class="difficulty-selector">
+              <ion-icon name="flame" 
+                [class.active]="questData.difficulty >= 1"
+                (click)="setDifficulty(1)">
+              </ion-icon>
+            </div>
+
+            <!-- Action Buttons -->
+            <button class="forge-btn" (click)="createQuest()" [disabled]="!isFormValid()">
+              {{ isEditing ? 'ACTUALIZAR' : 'FORJAR' }}
+            </button>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-content>
+    ```
+  </Tab>
+</Tabs>
+
+## Input Properties
+
+<ParamField path="questToEdit" type="Quest" optional>
+  Quest object to edit. When provided, the form switches to edit mode and pre-fills with quest data.
+</ParamField>
+
+## Form Data Structure
+
+The form manages a `Quest` object with the following structure:
+
+```typescript
+questData: Quest = {
+  id: crypto.randomUUID(),
+  title: '',                    // Required
+  description: '',
+  category: 'frontend',         // Required
+  kingdom: 'frontend',
+  icon: 'terminal',
+  colorClass: 'color-blue',
+  glowClass: 'neon-border',
+  dueDate: '',
+  difficulty: 2,                // Required (1-3)
+  xpReward: 250,                // Required
+  reward: '+250 XP',
+  badges: [],
+  tags: ['TRABAJO PROFUNDO'],
+  createdAt: new Date(),
+  status: 'pending'
+};
+```
+
+## Key Methods
+
+### createQuest()
+
+Creates a new quest or updates an existing one.
+
+```typescript
+async createQuest() {
+  if (!this.isFormValid()) {
+    await this.showToast('Por favor completa todos los campos requeridos', 'warning');
+    return;
+  }
+
+  const loading = await this.loadingController.create({
+    message: this.isEditing ? 'Actualizando misión...' : 'Forjando misión...',
+    spinner: 'circles'
+  });
+
+  await loading.present();
+
+  try {
+    const questData = {
+      ...this.questData,
+      reward: `+${this.questData.xpReward} XP`,
+      tags: this.questData.tags.length > 0 ? this.questData.tags : ['TRABAJO PROFUNDO']
+    };
+
+    if (this.isEditing && this.editingQuestId) {
+      savedQuest = this.questService.updateQuest(this.editingQuestId, questData);
+      await this.showToast('Misión actualizada con éxito', 'success');
+    } else {
+      savedQuest = this.questService.createQuest(questData);
+      await this.showToast('¡Misión forjada con éxito!', 'success');
+    }
+
+    this.questSharedService.triggerRefresh();
+    this.resetForm();
+    this.goToQuestList();
+  } catch (error) {
+    await this.showToast('Error al procesar la misión', 'danger');
+  } finally {
+    await loading.dismiss();
+  }
+}
+```
+
+### isFormValid()
+
+Validates the form before submission.
+
+```typescript
+isFormValid(): boolean {
+  return !!(
+    this.questData.title?.trim() &&
+    this.questData.category &&
+    this.questData.difficulty > 0 &&
+    this.questData.xpReward > 0
+  );
+}
+```
+
+### onCategorySelected()
+
+Handles category selection from the horizontal category component.
+
+```typescript
+onCategorySelected(categories: Category[]) {
+  const category = categories[0];
+  
+  if (!category) {
+    this.questData.category = "";
+    this.questData.colorClass = 'realm-green';
+    this.questData.icon = 'terminal';
+    return;
+  }
+
+  this.questData.category = category.name;
+  this.questData.colorClass = category.colorClass || 'realm-green';
+  this.questData.icon = category.icon || 'terminal';
+}
+```
+
+### setDifficulty()
+
+Sets the quest difficulty level (1-3).
+
+```typescript
+setDifficulty(level: number) {
+  this.questData.difficulty = level;
+}
+```
+
+### addTag()
+
+Adds a custom tag to the quest.
+
+```typescript
+addTag(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const tag = input.value?.trim();
+
+  if (tag && !this.questData.tags.includes(tag)) {
+    this.questData.tags.push(tag);
+    this.newTag = '';
+  }
+}
+```
+
+### removeTag()
+
+Removes a tag from the quest.
+
+```typescript
+removeTag(index: number) {
+  if (index >= 0 && index < this.questData.tags.length) {
+    this.questData.tags.splice(index, 1);
+  }
+}
+```
+
+## Form Validation
+
+The form validates the following required fields:
+
+- **Title**: Must not be empty
+- **Category**: Must be selected
+- **Difficulty**: Must be greater than 0 (1-3)
+- **XP Reward**: Must be greater than 0
+
+<Note>
+  The "Forjar" button is disabled until all required fields are valid.
+</Note>
+
+## Edit Mode
+
+The component can load an existing quest for editing in two ways:
+
+### 1. Via @Input Property
+
+```typescript
+<app-new-quest [questToEdit]="selectedQuest"></app-new-quest>
+```
+
+### 2. Via Route Parameters
+
+```typescript
+// Route: /quests/edit/:id
+private loadQuestForEditing(questId: string) {
+  const quest = this.questService.getQuestById(questId);
+  if (quest) {
+    this.isEditing = true;
+    this.editingQuestId = questId;
+    this.questData = { ...quest };
+  }
+}
+```
+
+## Category Mappings
+
+The component maintains mappings for category display:
+
+```typescript
+categoryTextMap = {
+  'design': 'Diseño',
+  'frontend': 'Desarrollo',
+  'other': 'Marketing',
+  'devops': 'DevOps',
+  'mobile': 'Mobile',
+  'ai': 'AI',
+  'data': 'Data',
+  'security': 'Security',
+  'softskills': 'Soft Skills'
+};
+```
+
+## Difficulty Mapping
+
+```typescript
+difficultyMap = { 
+  1: 'Fácil', 
+  2: 'Medio', 
+  3: 'Difícil' 
+};
+```
+
+## User Feedback
+
+The component provides feedback through:
+
+### Loading States
+
+```typescript
+const loading = await this.loadingController.create({
+  message: 'Forjando misión...',
+  spinner: 'circles'
+});
+```
+
+### Toast Notifications
+
+```typescript
+private async showToast(message: string, color: 'success' | 'warning' | 'danger') {
+  const toast = await this.toastController.create({
+    message,
+    duration: 3000,
+    color,
+    position: 'bottom',
+    buttons: [{ icon: 'close', role: 'cancel' }]
+  });
+  await toast.present();
+}
+```
+
+### Confirmation Alerts
+
+```typescript
+async cancelQuest() {
+  if (this.isEditing) {
+    const alert = await this.alertController.create({
+      header: 'Cancelar Edición',
+      message: '¿Estás seguro de que deseas cancelar?',
+      buttons: ['Seguir Editando', 'Cancelar']
+    });
+    await alert.present();
+  }
+}
+```
+
+## Usage Example
+
+### Creating a New Quest
+
+```typescript
+import { NewQuestComponent } from './components/edits/new-quest/new-quest.component';
+
+@Component({
+  template: `<app-new-quest></app-new-quest>`
+})
+export class NewQuestPage {}
+```
+
+### Editing an Existing Quest
+
+```typescript
+@Component({
+  template: `
+    <app-new-quest [questToEdit]="selectedQuest"></app-new-quest>
+  `
+})
+export class EditQuestPage {
+  selectedQuest: Quest = {
+    id: '123',
+    title: 'Complete documentation',
+    category: 'frontend',
+    difficulty: 2,
+    xpReward: 500
+  };
+}
+```
+
+## Integration with Services
+
+- **QuestService**: CRUD operations for quests
+- **QuestSharedService**: Triggers refresh in other components
+- **CategoryService**: Loads available categories
+
+```typescript
+constructor(
+  private questService: QuestService,
+  private questSharedService: QuestSharedService,
+  private categoryService: CategoryService
+) {}
+
+ngOnInit() {
+  this.categories = this.categoryService.getAll();
+}
+```
+
+## Related Components
+
+- [Quest Cards](/components/quest-cards) - Display and manage quests
+- [Category Selector](/components/category-selector) - Category selection UI
+- [Shared Components](/components/shared-components) - Common UI elements

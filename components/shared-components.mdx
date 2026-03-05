@@ -1,0 +1,440 @@
+---
+title: "Shared Components"
+description: "Reusable UI components used throughout the Tareas application"
+---
+
+## Overview
+
+Tareas includes several shared components that provide consistent UI elements across the application. These components are standalone and can be easily imported into any module or component.
+
+## Header Component
+
+The `HeaderComponent` displays the user profile, progress, and navigation controls.
+
+### Features
+
+- User avatar and profile information
+- XP progress bar
+- Streak badge (days in a row)
+- Menu button for navigation
+
+### Usage
+
+```typescript
+import { HeaderComponent } from './shared/header/header.component';
+
+@Component({
+  template: `<app-header></app-header>`,
+  imports: [HeaderComponent]
+})
+export class HomePage {}
+```
+
+### Component Structure
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    @Component({
+      selector: 'app-header',
+      templateUrl: './header.component.html',
+      standalone: true,
+      imports: [
+        IonHeader, 
+        IonToolbar, 
+        IonIcon, 
+        IonMenuButton,
+        IonAvatar,
+        CommonModule
+      ]
+    })
+    export class HeaderComponent implements OnInit {
+      userName: string = 'MiguelDeveloper';
+      userLevel: number = 15;
+      userProgress: number = 75;  // 0-100 percentage
+
+      constructor(private router: Router) {}
+
+      navigateTo(route: string) {
+        this.router.navigate([route]);
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Template">
+    ```html
+    <ion-header class="ion-no-border">
+      <ion-toolbar class="header-toolbar">
+        <div class="header-content">
+          <!-- Profile Section -->
+          <div class="profile-section">
+            <ion-avatar class="user-avatar">
+              <img src="profile-url" alt="Profile">
+            </ion-avatar>
+            
+            <div class="profile-info">
+              <h2 class="username">{{ userName }}</h2>
+              <div class="xp-bar-container">
+                <div class="xp-bar">
+                  <div class="xp-progress" [style.width.%]="userProgress"></div>
+                </div>
+                <span class="xp-text">{{ userProgress }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Streak Badge -->
+          <div class="streak-badge">
+            <ion-icon name="flame" class="streak-icon"></ion-icon>
+            <span class="streak-text">7 DÍAS RACHA</span>
+          </div>
+
+          <!-- Menu Button -->
+          <ion-menu-button class="nav-btn" menu="main">
+            <ion-icon name="menu" slot="icon-only"></ion-icon>
+          </ion-menu-button>
+        </div>
+      </ion-toolbar>
+    </ion-header>
+    ```
+  </Tab>
+</Tabs>
+
+### Properties
+
+- **userName**: Display name of the user
+- **userLevel**: Current level (numerical)
+- **userProgress**: XP progress percentage (0-100)
+
+---
+
+## Footer Component
+
+The `FooterComponent` provides bottom navigation with context-aware "add" button.
+
+### Features
+
+- Multiple navigation tabs
+- Context-aware add button (changes route based on active tab)
+- Active tab highlighting
+- Smooth navigation transitions
+- Auto-detects current route
+
+### Usage
+
+```typescript
+import { FooterComponent } from './shared/footer/footer.component';
+
+@Component({
+  template: `
+    <ion-content>
+      <!-- Page content -->
+    </ion-content>
+    <app-footer></app-footer>
+  `,
+  imports: [FooterComponent]
+})
+export class QuestsPage {}
+```
+
+### Component Structure
+
+```typescript
+@Component({
+  selector: 'app-footer',
+  templateUrl: './footer.component.html',
+  standalone: true,
+  imports: [IonIcon, IonFooter, IonToolbar, CommonModule]
+})
+export class FooterComponent implements OnInit, OnDestroy {
+  activeTab: string = 'daily';
+
+  navItems: NavItem[] = [
+    { id: 'categories', label: 'Categorías', icon: 'grid-outline', route: '/categories' },
+    { id: 'add', label: '', icon: 'add', route: '', isAddButton: true },
+    { id: 'daily', label: 'Diarios', icon: 'sunny', route: '/quests' },
+  ];
+
+  constructor(
+    private router: Router,
+    private navCtrl: NavController
+  ) {}
+}
+```
+
+### Navigation Items
+
+Each navigation item has:
+
+```typescript
+interface NavItem {
+  id: string;           // Unique identifier
+  label: string;        // Display text
+  icon: string;         // Ionic icon name
+  route: string;        // Navigation route
+  isAddButton?: boolean; // Special add button flag
+}
+```
+
+### Active Tab Detection
+
+The footer automatically detects and highlights the active tab:
+
+```typescript
+private updateActiveTab(): void {
+  let url = this.router.url;
+  
+  if (url.includes('/categories')) {
+    this.activeTab = 'categories';
+  } else if (url.includes('/quests')) {
+    this.activeTab = 'daily';
+  }
+}
+```
+
+### Context-Aware Add Button
+
+The add button changes behavior based on the active tab:
+
+```typescript
+addQuest(): void {
+  const route = this.activeTab === 'categories' 
+    ? '/category/add'   // Add category
+    : '/quests/add';    // Add quest
+  
+  this.navCtrl.navigateForward(route);
+}
+```
+
+---
+
+## Card Category Component
+
+The `CardCategoryComponent` displays a single category card with progress tracking.
+
+### Features
+
+- Category title and description
+- Level display
+- Progress bar (0-100%)
+- Customizable colors and icons
+- Progress status indicators
+
+### Usage
+
+```typescript
+import { CardCategoryComponent } from './shared/card-category/card-category.component';
+
+@Component({
+  template: `
+    <app-card-category
+      title="Diseño UX"
+      subtitle="Master UI/UX principles"
+      [level]="5"
+      [progress]="75"
+      color="realm-design"
+      icon="brush">
+    </app-card-category>
+  `
+})
+export class CategoriesPage {}
+```
+
+### Input Properties
+
+<ParamField path="title" type="string" default="'Nombre de la categoría'">
+  The category title displayed on the card.
+</ParamField>
+
+<ParamField path="subtitle" type="string" default="'Descripción breve'">
+  Brief description of the category.
+</ParamField>
+
+<ParamField path="level" type="number" default="1">
+  Current level in this category.
+</ParamField>
+
+<ParamField path="progress" type="number" default="50">
+  Progress percentage (0-100) towards next level.
+</ParamField>
+
+<ParamField path="color" type="string" default="'primary'">
+  Color theme for the card. Options: `primary`, `realm-design`, `realm-dev`, `realm-marketing`, `realm-circle`, `realm-innovation`, `realm-heal`, `realm-study`, `realm-funny`
+</ParamField>
+
+<ParamField path="icon" type="string" default="'star'">
+  Ionic icon name to display on the card.
+</ParamField>
+
+### Component Structure
+
+```typescript
+@Component({
+  selector: 'app-card-category',
+  templateUrl: './card-category.component.html',
+  standalone: true,
+  imports: [CommonModule, IonicModule]
+})
+export class CardCategoryComponent implements OnInit {
+  @Input() title: string = 'Nombre de la categoría';
+  @Input() subtitle: string = 'Descripción breve';
+  @Input() level: number = 1;
+  @Input() progress: number = 50;
+  @Input() color: string = 'primary';
+  @Input() icon: string = 'star';
+}
+```
+
+### Helper Methods
+
+#### getBadgeColor()
+
+Returns the Ionic color for the level badge:
+
+```typescript
+getBadgeColor(): string {
+  switch (this.color) {
+    case 'primary': return 'success';
+    case 'realm-design': return 'primary';
+    case 'realm-dev': return 'secondary';
+    case 'realm-marketing': return 'warning';
+    default: return 'success';
+  }
+}
+```
+
+#### getProgressStatus()
+
+Returns a text status based on progress:
+
+```typescript
+getProgressStatus(): string {
+  if (this.progress >= 90) return 'experto';
+  if (this.progress >= 70) return 'avanzado';
+  if (this.progress >= 50) return 'intermedio';
+  if (this.progress >= 30) return 'principiante';
+  return 'novato';
+}
+```
+
+#### Icon Mapping
+
+Maps Material Icons to Ionic Icons:
+
+```typescript
+getIconName(): string {
+  const iconMap: { [key: string]: string } = {
+    'star': 'star',
+    'school': 'school',
+    'brush': 'brush',
+    'terminal': 'terminal',
+    'rocket': 'rocket',
+    'heart': 'heart',
+    'shield': 'shield-checkmark',
+    'analytics': 'analytics',
+    // ... more mappings
+  };
+  return iconMap[this.icon] || 'star';
+}
+```
+
+### Color Classes
+
+Available color classes:
+
+- **primary**: Green theme (success)
+- **realm-design**: Blue theme (design)
+- **realm-dev**: Purple theme (development)
+- **realm-marketing**: Orange theme (marketing)
+- **realm-circle**: Special principal theme
+- **realm-innovation**: Innovation theme
+- **realm-heal**: Health/wellness theme
+- **realm-study**: Study/learning theme
+- **realm-funny**: Entertainment theme
+
+### Progress Tracking
+
+```typescript
+getProgressRemaining(): number {
+  return 100 - this.progress;
+}
+
+getNextLevel(): number {
+  return this.level + 1;
+}
+
+isCompleted(): boolean {
+  return this.progress >= 100;
+}
+```
+
+---
+
+## When to Use Each Component
+
+### Use Header When:
+
+- You need to display user information
+- You want to show progress/XP
+- You need a consistent top navigation
+
+### Use Footer When:
+
+- You need bottom navigation
+- You want context-aware actions
+- You need tab-based navigation
+
+### Use Card Category When:
+
+- Displaying category listings
+- Showing progress in different areas
+- Building category dashboards
+
+### Use Card Category Horizontally When:
+
+- You need category selection (single or multiple)
+- Building filters
+- Creating category pickers in forms
+
+---
+
+## Importing Shared Components
+
+All shared components are standalone and can be imported directly:
+
+```typescript
+import { HeaderComponent } from './shared/header/header.component';
+import { FooterComponent } from './shared/footer/footer.component';
+import { CardCategoryComponent } from './shared/card-category/card-category.component';
+import { CardCategoryHorizontallyComponent } from './shared/card-category-horizontally/card-category-horizontally.component';
+
+@Component({
+  standalone: true,
+  imports: [
+    HeaderComponent,
+    FooterComponent,
+    CardCategoryComponent,
+    CardCategoryHorizontallyComponent
+  ]
+})
+export class MyComponent {}
+```
+
+---
+
+## Best Practices
+
+<Note>
+  Always import only the shared components you need to keep bundle size optimized.
+</Note>
+
+1. **Header**: Place at the top of your page template
+2. **Footer**: Place at the bottom, outside of `<ion-content>`
+3. **Card Category**: Use for displaying category information, not selection
+4. **Card Category Horizontally**: Use for category selection in forms or filters
+
+## Related Documentation
+
+- [Quest Cards](/components/quest-cards) - Main quest display component
+- [Quest Form](/components/quest-form) - Quest creation and editing
+- [Category Selector](/components/category-selector) - Detailed category selector docs

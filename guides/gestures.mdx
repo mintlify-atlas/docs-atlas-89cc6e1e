@@ -1,0 +1,321 @@
+---
+title: Gesture Controls
+description: Master swipe gestures to complete and delete quests efficiently
+---
+
+Tareas uses intuitive swipe gestures powered by Ionic's Gesture Controller to let you quickly manage quests with natural touch interactions.
+
+## Overview
+
+Quest cards support horizontal swipe gestures:
+
+- **Swipe Right** → Complete the quest ✓
+- **Swipe Left** → Delete the quest ✗
+
+## Implementation
+
+Gestures are implemented using Ionic's `GestureController` in the `QuestCardsComponent`.
+
+### Gesture Controller Setup
+
+```typescript
+import { GestureController, Gesture } from '@ionic/angular';
+
+export class QuestCardsComponent implements OnInit {
+  @ViewChildren('cardWrapper', { read: ElementRef }) cardWrappers!: QueryList<ElementRef>;
+  @ViewChildren('swipeFeedback', { read: ElementRef }) swipeFeedbacks!: QueryList<ElementRef>;
+
+  constructor(private gestureCtrl: GestureController) { }
+
+  ngAfterViewInit() {
+    this.setupGestures();
+  }
+}
+```
+
+### Creating Gestures
+
+Each quest card gets its own gesture instance:
+
+```typescript
+private setupGestures(): void {
+  this.cardWrappers.forEach((cardRef, index) => {
+    const quest = this.stateSubject.value.processedQuests[index];
+    const feedbackEl = cardRef.nativeElement.querySelector('.swipe-feedback') as HTMLElement;
+
+    const gesture: Gesture = this.gestureCtrl.create({
+      el: cardRef.nativeElement,
+      gestureName: 'swipe',
+      onMove: ev => this.handleMove(ev, cardRef, feedbackEl),
+      onEnd: ev => this.handleSwipe(ev, quest, cardRef.nativeElement)
+    });
+
+    gesture.enable(true);
+  });
+}
+```
+
+## Visual Feedback
+
+As you swipe, the card transforms and displays visual feedback:
+
+### Card Transform
+
+The card follows your finger with a rotation effect:
+
+```typescript
+onMove: ev => {
+  // Move and rotate card based on swipe distance
+  cardRef.nativeElement.style.transform = 
+    `translateX(${ev.deltaX}px) rotate(${ev.deltaX / 20}deg)`;
+
+  if (feedbackEl) {
+    if (ev.deltaX < 0) {
+      // Swipe left = delete
+      feedbackEl.style.backgroundColor = 'red';
+      feedbackEl.style.justifyContent = 'flex-end';
+      feedbackEl.querySelector('ion-icon')!.setAttribute('name', 'trash');
+      feedbackEl.style.opacity = '0.8';
+    } else if (ev.deltaX > 0) {
+      // Swipe right = complete
+      feedbackEl.style.backgroundColor = 'green';
+      feedbackEl.style.justifyContent = 'flex-start';
+      feedbackEl.querySelector('ion-icon')!.setAttribute('name', 'checkmark');
+      feedbackEl.style.opacity = '0.8';
+    } else {
+      feedbackEl.style.opacity = '0';
+    }
+  }
+}
+```
+
+### Feedback Overlay
+
+The feedback overlay appears behind the card during the swipe:
+
+```html
+<div class="quest-wrapper">
+  <div class="swipe-feedback">
+    <ion-icon class="feedback-icon"></ion-icon>
+  </div>
+  <!-- Quest card content -->
+</div>
+```
+
+```scss
+.swipe-feedback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 2rem;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  pointer-events: none;
+}
+
+.feedback-icon {
+  font-size: 2.5rem;
+}
+```
+
+## Gesture Threshold
+
+A threshold determines when a swipe is committed:
+
+```typescript
+handleSwipe(ev: any, quest: Quest, cardEl: HTMLElement) {
+  const threshold = 150; // pixels
+
+  if (ev.deltaX > threshold) {
+    // Swipe right: complete quest
+    this.completeQuest(quest, cardEl);
+  } else if (ev.deltaX < -threshold) {
+    // Swipe left: delete quest
+    this.deleteQuest(quest, cardEl);
+  } else {
+    // Swipe too small: return to center
+    cardEl.style.transform = 'translateX(0px) rotate(0deg)';
+    cardEl.style.transition = 'transform 0.2s ease-out';
+  }
+}
+```
+
+<Note>
+  The 150px threshold prevents accidental actions from small swipes or scrolling.
+</Note>
+
+## Completing Quests
+
+When you swipe right past the threshold:
+
+```typescript
+if (ev.deltaX > threshold) {
+  console.log('Completing quest:', quest.title);
+  const completed = this.questService.completeQuest(quest.id);
+  
+  if (completed) {
+    // Animate card off screen
+    cardEl.style.transform = 'translateX(100%)';
+    cardEl.style.transition = 'transform 0.3s ease-out';
+
+    // Refresh quest list after animation
+    setTimeout(() => {
+      this.applyCategoryFilter();
+      this.cdr.detectChanges();
+    }, 300);
+  }
+}
+```
+
+### Animation Sequence
+
+1. Card slides fully to the right (100%)
+2. Transition duration: 300ms
+3. Quest is marked as completed in the service
+4. Quest list refreshes to hide completed quests
+
+## Deleting Quests
+
+When you swipe left past the threshold:
+
+```typescript
+if (ev.deltaX < -threshold) {
+  console.log('Deleting quest:', quest.title);
+  const deleted = this.questService.deleteQuest(quest.id);
+  
+  if (deleted) {
+    // Animate card off screen
+    cardEl.style.transform = 'translateX(-100%)';
+    cardEl.style.transition = 'transform 0.3s ease-out';
+
+    // Refresh quest list after animation
+    setTimeout(() => {
+      this.applyCategoryFilter();
+      this.cdr.detectChanges();
+    }, 300);
+  }
+}
+```
+
+### Animation Sequence
+
+1. Card slides fully to the left (-100%)
+2. Transition duration: 300ms
+3. Quest is deleted from the service
+4. Quest list refreshes to remove the quest
+
+## Canceling Gestures
+
+If you don't swipe far enough, the card returns to its original position:
+
+```typescript
+else {
+  // Return to center with smooth animation
+  cardEl.style.transform = 'translateX(0px) rotate(0deg)';
+  cardEl.style.transition = 'transform 0.2s ease-out';
+}
+```
+
+The feedback overlay also fades out:
+
+```typescript
+onEnd: ev => {
+  feedbackEl.style.opacity = '0'; // hide feedback
+  this.handleSwipe(ev, quest, cardRef.nativeElement);
+}
+```
+
+## Template Structure
+
+The quest card HTML structure for gestures:
+
+```html
+<div class="quest-list">
+  @for (quest of (state$ | async)?.processedQuests; track quest.id) {
+    <div class="quest-wrapper" #cardWrapper>
+      <!-- Swipe feedback overlay -->
+      <div class="swipe-feedback">
+        <ion-icon class="feedback-icon"></ion-icon>
+      </div>
+
+      <!-- Quest card -->
+      <div class="quest-card" [class]="quest.glowClass">
+        <!-- Card content -->
+      </div>
+    </div>
+  }
+</div>
+```
+
+## Gesture Properties
+
+Key properties passed to `gestureCtrl.create()`:
+
+| Property | Description |
+|----------|-------------|
+| `el` | The HTML element to attach the gesture to |
+| `gestureName` | Identifier for the gesture (e.g., 'swipe') |
+| `onMove` | Callback during swipe movement |
+| `onEnd` | Callback when swipe ends (finger lifted) |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Clear Visual Feedback" icon="eye">
+    Always show clear visual feedback during gestures so users know what action will occur.
+  </Card>
+  <Card title="Appropriate Threshold" icon="sliders">
+    Use a threshold that prevents accidental actions but doesn't require excessive swiping.
+  </Card>
+  <Card title="Smooth Animations" icon="sparkles">
+    Include smooth transitions when cards return to center or animate off-screen.
+  </Card>
+  <Card title="Pointer Events" icon="hand">
+    Set `pointer-events: none` on feedback overlays so they don't interfere with gestures.
+  </Card>
+</CardGroup>
+
+<Tip>
+  The gesture system automatically handles change detection and re-initializes gestures when the quest list updates.
+</Tip>
+
+## Troubleshooting
+
+### Gestures Not Working
+
+Ensure ViewChildren are properly queried and gestures are set up after view initialization:
+
+```typescript
+ngAfterViewInit() {
+  this.cardWrappers.forEach((cardRef, index) => {
+    // Setup gestures for each card
+  });
+}
+```
+
+### Gestures Interfere with Scrolling
+
+The gesture controller distinguishes between horizontal swipes (gestures) and vertical scrolling automatically. No additional configuration needed.
+
+### Cards Don't Reset
+
+Make sure transitions are applied when returning to center:
+
+```typescript
+cardEl.style.transition = 'transform 0.2s ease-out';
+cardEl.style.transform = 'translateX(0px) rotate(0deg)';
+```
+
+## Source Code Reference
+
+- Gesture implementation: `src/app/components/quest-cards/quest-cards.component.ts:90`
+- Gesture setup: `src/app/components/quest-cards/quest-cards.component.ts:131`
+- Swipe handler: `src/app/components/quest-cards/quest-cards.component.ts:189`
+- Feedback styles: `src/app/components/quest-cards/quest-cards.component.scss:6`

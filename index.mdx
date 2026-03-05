@@ -1,97 +1,125 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: Transform your daily tasks into exciting quests with gamification mechanics
 ---
 
-## Setting up
+<img
+  className="block"
+  src="https://media.brand.dev/2332534d-0539-4de6-a1d2-00951b1a605c.svg"
+  alt="Tareas Logo"
+  style={{ maxWidth: '200px', margin: '0 auto 2rem' }}
+/>
 
-Get your documentation site up and running in minutes.
+# Welcome to Tareas
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Tareas is a mobile task management application that transforms boring daily tasks into exciting quests with gamification mechanics. Built with Ionic and Angular, it brings the engaging elements of video games to your productivity workflow.
 
-## Make it yours
+## Why Tareas?
 
-Design a docs site that looks great and empowers your users.
+Traditional task managers can feel monotonous. Tareas adds excitement and motivation to your daily workflow by introducing:
 
-<Columns cols={2}>
+- **Quest System** - Tasks become missions with XP rewards and difficulty levels
+- **Visual Effects** - Glassmorphism and neon effects create an immersive experience
+- **Intuitive Gestures** - Swipe to complete or delete tasks with fluid animations
+- **Category Kingdoms** - Organize tasks into themed visual categories
+- **Native Performance** - Built with Capacitor for smooth native mobile experience
+
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get up and running in 5 minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Core Concepts"
+    icon="book"
+    href="/concepts/quests"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Learn about quests, categories, and gamification
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
+    title="Components"
+    icon="puzzle-piece"
+    href="/components/quest-cards"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Explore the component library
   </Card>
   <Card
-    title="Code samples"
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api/quest-service"
   >
-    Add sample code to demonstrate how to use your product.
+    Dive into the services and models
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Key Features
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={3}>
+  <Card title="Gamified Tasks" icon="gamepad">
+    XP rewards, difficulty levels, and progress tracking
+  </Card>
+  <Card title="Swipe Gestures" icon="hand">
+    Intuitive touch controls for completing and deleting
+  </Card>
+  <Card title="Visual Themes" icon="palette">
+    Category-based themes with glassmorphism effects
+  </Card>
+  <Card title="LocalStorage" icon="database">
+    Automatic data persistence without backend
+  </Card>
+  <Card title="Native Mobile" icon="mobile">
+    Built with Capacitor for iOS and Android
+  </Card>
+  <Card title="TypeScript" icon="code">
+    Fully typed Angular 20+ standalone components
+  </Card>
+</CardGroup>
+
+## Tech Stack
+
+Tareas is built with modern web technologies:
+
+- **Frontend Framework**: Angular 20+ with standalone components
+- **Mobile UI**: Ionic 8+ with Capacitor for native deployment
+- **Styling**: TailwindCSS with custom glassmorphism and neon effects
+- **State Management**: RxJS with BehaviorSubject patterns
+- **Data Persistence**: LocalStorage with automatic synchronization
+- **Gestures**: Ionic Gesture Controller for swipe interactions
+
+## Architecture
+
+The application follows a component-based architecture with clear separation of concerns:
+
+```
+src/app/
+├── common/
+│   ├── models/          # TypeScript interfaces
+│   └── services/        # Shared services
+├── components/
+│   ├── quest-cards/     # Quest visualization
+│   ├── edits/          # Forms and editors
+│   └── shared/         # Reusable components
+└── pages/              # Route components
+```
+
+## Next Steps
+
+<Steps>
+  <Step title="Install Dependencies">
+    Follow the [installation guide](/installation) to set up your development environment
+  </Step>
+  <Step title="Run the App">
+    Start the development server and explore the app locally
+  </Step>
+  <Step title="Customize">
+    Learn how to create quests, manage categories, and apply custom styles
+  </Step>
+  <Step title="Deploy">
+    Build for web or deploy to iOS/Android devices
+  </Step>
+</Steps>
+
+Ready to get started? Head over to the [Quickstart](/quickstart) guide.

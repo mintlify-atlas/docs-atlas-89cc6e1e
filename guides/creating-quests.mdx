@@ -1,0 +1,232 @@
+---
+title: Creating Quests
+description: Learn how to create and manage quests in Tareas
+---
+
+Quests are the core tasks in Tareas. This guide walks you through creating a new quest from start to finish.
+
+## Quest Creation Workflow
+
+<Steps>
+  <Step title="Navigate to Quest Creation">
+    Tap the large **+** button in the center of the bottom navigation bar. This will open the quest creation form.
+    
+    The form header will display "FORJAR MISIÓN" (Forge Mission).
+  </Step>
+
+  <Step title="Enter Quest Details">
+    Fill in the basic information for your quest:
+
+    ### Quest Name
+    Enter a descriptive title for your quest (e.g., "Vencer al Dragón del Email").
+
+    ```html
+    <input 
+      type="text" 
+      placeholder="Ej: Vencer al Dragón del Email" 
+      [(ngModel)]="questData.title"
+      class="native-input" 
+    />
+    ```
+
+    ### Description
+    Add a detailed description of what needs to be done.
+
+    ```html
+    <textarea 
+      rows="3" 
+      placeholder="Ej: En esta misión se va a realizar una cacería"
+      [(ngModel)]="questData.description" 
+      class="native-input native-textarea">
+    </textarea>
+    ```
+  </Step>
+
+  <Step title="Select a Category">
+    Choose the category that best fits your quest. Categories include:
+    
+    - **Diseño** (Design)
+    - **Desarrollo** (Development)
+    - **Marketing**
+    - **Principal** (Primary)
+    - **Innovación** (Innovation)
+    - **Salud** (Health)
+    - **Estudio** (Study)
+    - **Diversión** (Fun)
+
+    The category selector uses a horizontal scrolling component:
+
+    ```html
+    <app-card-category-horizontally 
+      [multiple]="false" 
+      [selectedCategoryName]="getCategoryDisplayName()"
+      (categorySelected)="onCategorySelected($event)">
+    </app-card-category-horizontally>
+    ```
+
+    <Note>
+      When you select a category, the quest automatically inherits the category's color theme and icon.
+    </Note>
+  </Step>
+
+  <Step title="Set Difficulty Level">
+    Use the flame icons to set the quest difficulty:
+
+    - 🔥 = Easy (1 flame)
+    - 🔥🔥 = Medium (2 flames) 
+    - 🔥🔥🔥 = Hard (3 flames)
+
+    ```html
+    <div class="difficulty-selector realm-orange">
+      <ion-icon 
+        name="flame" 
+        class="difficulty-flame" 
+        [class.active]="questData.difficulty >= 1"
+        (click)="setDifficulty(1)">
+      </ion-icon>
+      <ion-icon 
+        name="flame" 
+        class="difficulty-flame" 
+        [class.active]="questData.difficulty >= 2"
+        (click)="setDifficulty(2)">
+      </ion-icon>
+      <ion-icon 
+        name="flame" 
+        class="difficulty-flame" 
+        [class.active]="questData.difficulty >= 3"
+        (click)="setDifficulty(3)">
+      </ion-icon>
+    </div>
+    ```
+
+    The difficulty is stored in the quest data model:
+
+    ```typescript
+    setDifficulty(level: number) {
+      this.questData.difficulty = level;
+      console.log('Dificultad establecida:', level);
+    }
+    ```
+  </Step>
+
+  <Step title="Save the Quest">
+    Tap the **FORJAR** (Forge) button to create your quest. The button is disabled until all required fields are filled:
+
+    ```html
+    <button 
+      class="forge-btn realm-green flex-1" 
+      (click)="createQuest()" 
+      [disabled]="!isFormValid()">
+      <ion-icon name="construct-outline" class="forge-icon"></ion-icon>
+      FORJAR
+    </button>
+    ```
+
+    The form validation checks:
+
+    ```typescript
+    isFormValid(): boolean {
+      return !!(
+        this.questData.title?.trim() &&
+        this.questData.category &&
+        this.questData.difficulty > 0 &&
+        this.questData.xpReward > 0
+      );
+    }
+    ```
+
+    Upon successful creation, you'll see a success toast message and be redirected to the quest list.
+  </Step>
+</Steps>
+
+## Quest Data Model
+
+When you create a quest, the following data structure is saved:
+
+```typescript
+interface Quest {
+  id: string;                    // Auto-generated UUID
+  title: string;                 // Quest name
+  category: string;              // Selected category
+  description: string;           // Quest details
+  icon: string;                  // Icon inherited from category
+  colorClass: string;            // Color theme class
+  glowClass: string;             // Neon glow effect class
+  kingdom: string;               // Kingdom/realm association
+  dueDate: string;               // ISO date string
+  difficulty: number;            // 1, 2, or 3
+  xpReward: number;              // Experience points (default: 250)
+  reward: string;                // Formatted reward text
+  badges: string[];              // Achievement badges
+  tags: string[];                // Quest tags
+  status?: 'pending' | 'in-progress' | 'completed';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+## Default Values
+
+New quests are initialized with sensible defaults:
+
+```typescript
+questData: Quest = {
+  id: crypto.randomUUID(),
+  title: '',
+  description: '',
+  category: 'frontend',
+  kingdom: 'frontend',
+  icon: 'terminal',
+  colorClass: 'color-blue',
+  glowClass: 'neon-border',
+  dueDate: '',
+  difficulty: 2,              // Medium difficulty
+  xpReward: 250,              // Standard XP reward
+  reward: '+250 XP',
+  badges: [],
+  tags: ['TRABAJO PROFUNDO'],
+  createdAt: new Date(),
+  status: 'pending'
+};
+```
+
+<Tip>
+  The due date is automatically set to tomorrow when you open the creation form.
+</Tip>
+
+## Editing Existing Quests
+
+To edit a quest, navigate to it from the quest list. The same form is used for both creating and editing:
+
+- The header will change to "EDITAR MISIÓN" (Edit Mission)
+- The save button will change to "ACTUALIZAR" (Update)
+- All existing values will be pre-filled in the form
+
+```typescript
+private checkIfEditing() {
+  const questId = this.activatedRoute.snapshot.paramMap.get('id');
+  if (questId) {
+    this.loadQuestForEditing(questId);
+  }
+}
+
+private loadQuestForEditing(questId: string) {
+  const quest = this.questService.getQuestById(questId);
+  if (quest) {
+    this.isEditing = true;
+    this.editingQuestId = questId;
+    this.questData = { ...quest };
+    this.ensureConsistentData();
+  }
+}
+```
+
+<Warning>
+  Canceling an edit will discard all changes. You'll be prompted to confirm before losing unsaved work.
+</Warning>
+
+## Source Code Reference
+
+- Quest creation form: `src/app/components/edits/new-quest/new-quest.component.ts:30`
+- Quest model: `src/app/common/models/quest.model.ts:1`
+- Quest service: `src/app/services/quest.service.ts`

@@ -1,0 +1,373 @@
+---
+title: "CategoryService"
+description: "Service for managing quest categories with localStorage persistence"
+---
+
+## Overview
+
+The `CategoryService` provides full CRUD (Create, Read, Update, Delete) operations for managing quest categories in the Tareas application. It uses localStorage for data persistence and RxJS observables for reactive state management.
+
+## Features
+
+- Complete CRUD operations for categories
+- localStorage-based persistence
+- Reactive state management with BehaviorSubject
+- Observable stream for real-time category updates
+- Automatic UUID generation for new categories
+
+---
+
+## Observable Streams
+
+### categories$
+
+An observable stream that emits the current list of categories whenever they change.
+
+```typescript
+categories$: Observable<Category[]>
+```
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-category-list',
+  templateUrl: './category-list.component.html'
+})
+export class CategoryListComponent implements OnInit {
+  categories: Category[] = [];
+
+  constructor(private categoryService: CategoryService) {}
+
+  ngOnInit() {
+    // Subscribe to category changes
+    this.categoryService.categories$.subscribe(categories => {
+      this.categories = categories;
+      console.log('Categories updated:', categories);
+    });
+  }
+}
+```
+
+---
+
+## Methods
+
+### getAll()
+
+Retrieves all categories from the service.
+
+```typescript
+getAll(): Category[]
+```
+
+<ResponseField name="Category[]" type="array">
+  Returns an array of all categories currently stored
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-categories',
+  templateUrl: './categories.component.html'
+})
+export class CategoriesComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  loadCategories() {
+    const categories = this.categoryService.getAll();
+    console.log('All categories:', categories);
+  }
+}
+```
+
+---
+
+### getById()
+
+Retrieves a single category by its unique identifier.
+
+```typescript
+getById(id: string): Category | undefined
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the category to retrieve
+</ParamField>
+
+<ResponseField name="Category | undefined" type="Category | undefined">
+  Returns the category if found, or `undefined` if no category exists with the given ID
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-category-detail',
+  templateUrl: './category-detail.component.html'
+})
+export class CategoryDetailComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  loadCategory(categoryId: string) {
+    const category = this.categoryService.getById(categoryId);
+    
+    if (category) {
+      console.log('Found category:', category);
+    } else {
+      console.log('Category not found');
+    }
+  }
+}
+```
+
+---
+
+### create()
+
+Creates a new category. Automatically generates a unique ID using `crypto.randomUUID()`.
+
+```typescript
+create(category: Omit<Category, 'id'>): Category
+```
+
+<ParamField path="category" type="Omit<Category, 'id'>" required>
+  The category data without an ID. The ID will be auto-generated. Must include: `key`, `name`, `colorClass`, and `icon`
+</ParamField>
+
+<ResponseField name="Category" type="Category">
+  Returns the newly created category with the generated ID
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-create-category',
+  templateUrl: './create-category.component.html'
+})
+export class CreateCategoryComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  createCategory() {
+    const newCategory = this.categoryService.create({
+      key: 'dev',
+      name: 'Development',
+      colorClass: 'text-blue-500',
+      icon: 'code-slash'
+    });
+
+    console.log('Created category:', newCategory);
+    // Output: { id: 'auto-generated-uuid', key: 'dev', name: 'Development', ... }
+  }
+}
+```
+
+---
+
+### update()
+
+Updates an existing category by ID. Supports partial updates.
+
+```typescript
+update(id: string, updatedCategory: Partial<Category> | Category): Category | null
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the category to update
+</ParamField>
+
+<ParamField path="updatedCategory" type="Partial<Category> | Category" required>
+  The updated category data. Can be a partial object containing only the fields to update, or a complete Category object
+</ParamField>
+
+<ResponseField name="Category | null" type="Category | null">
+  Returns the updated category if found, or `null` if no category exists with the given ID
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-edit-category',
+  templateUrl: './edit-category.component.html'
+})
+export class EditCategoryComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  updateCategoryName(categoryId: string) {
+    // Partial update - only change the name
+    const updated = this.categoryService.update(categoryId, {
+      name: 'New Category Name'
+    });
+
+    if (updated) {
+      console.log('Category updated:', updated);
+    } else {
+      console.log('Category not found');
+    }
+  }
+
+  updateFullCategory(categoryId: string) {
+    // Full update
+    const updated = this.categoryService.update(categoryId, {
+      id: categoryId,
+      key: 'design',
+      name: 'UI/UX Design',
+      colorClass: 'text-purple-500',
+      icon: 'color-palette'
+    });
+
+    console.log('Updated category:', updated);
+  }
+}
+```
+
+---
+
+### delete()
+
+Deletes a category by its ID.
+
+```typescript
+delete(id: string): boolean
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the category to delete
+</ParamField>
+
+<ResponseField name="boolean" type="boolean">
+  Returns `true` if the category was successfully deleted, `false` if no category was found with the given ID
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-category-manager',
+  templateUrl: './category-manager.component.html'
+})
+export class CategoryManagerComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  deleteCategory(categoryId: string) {
+    const wasDeleted = this.categoryService.delete(categoryId);
+
+    if (wasDeleted) {
+      console.log('Category deleted successfully');
+    } else {
+      console.log('Category not found or could not be deleted');
+    }
+  }
+}
+```
+
+---
+
+### clear()
+
+Removes all categories from localStorage and resets the service state.
+
+```typescript
+clear(): void
+```
+
+<ResponseField name="void" type="void">
+  This method does not return a value. It removes all categories from storage and emits an empty array to subscribers
+</ResponseField>
+
+<Warning>
+  This operation cannot be undone. All category data will be permanently removed from localStorage.
+</Warning>
+
+#### Usage Example
+
+```typescript
+import { CategoryService } from './common/services/category.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-settings',
+  templateUrl: './settings.component.html'
+})
+export class SettingsComponent {
+  constructor(private categoryService: CategoryService) {}
+
+  resetAllCategories() {
+    if (confirm('Are you sure you want to delete all categories?')) {
+      this.categoryService.clear();
+      console.log('All categories cleared');
+    }
+  }
+}
+```
+
+---
+
+## Category Model
+
+The `Category` interface represents a category object:
+
+```typescript
+interface Category {
+  id: string;
+  key: 'design' | 'dev' | 'marketing' | 'primary' | 'innovation' | 'strategy' | 'heal' | 'study' | 'funny';
+  name: string;
+  colorClass: string;
+  icon: string;
+}
+```
+
+<ParamField path="id" type="string">
+  Unique identifier (auto-generated UUID)
+</ParamField>
+
+<ParamField path="key" type="string">
+  Category key - must be one of: `design`, `dev`, `marketing`, `primary`, `innovation`, `strategy`, `heal`, `study`, `funny`
+</ParamField>
+
+<ParamField path="name" type="string">
+  Display name of the category
+</ParamField>
+
+<ParamField path="colorClass" type="string">
+  CSS class for category color styling
+</ParamField>
+
+<ParamField path="icon" type="string">
+  Ionicons icon name for the category
+</ParamField>
+
+---
+
+## Storage
+
+Categories are persisted in localStorage under the key `'categories'`.
+
+- Data is stored as JSON
+- Changes automatically sync to localStorage
+- Changes trigger updates to the `categories$` observable
+
+<Tip>
+  Subscribe to `categories$` to receive real-time updates whenever categories are created, updated, or deleted.
+</Tip>

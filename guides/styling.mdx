@@ -1,0 +1,513 @@
+---
+title: Styling & Theming
+description: Learn about Tareas' glassmorphism design, neon effects, and color system
+---
+
+Tareas features a modern dark theme with glassmorphism effects, neon glows, and vibrant color schemes inspired by gaming aesthetics.
+
+## Design System Overview
+
+The app uses a carefully crafted design system built on:
+
+- **Dark background**: Deep blue-black (`#0f172a`)
+- **Glassmorphism**: Translucent surfaces with backdrop blur
+- **Neon borders**: Glowing colored borders with box shadows
+- **Vibrant colors**: Category-specific color themes
+- **TailwindCSS utilities**: For rapid layout development
+
+## Color Palette
+
+Global CSS variables defined in `global.scss`:
+
+```scss
+:root {
+  --primary: #4a90e2;           // Clean blue
+  --secondary: #1e3a8a;         // Deep blue
+  --accent: #63b3ed;            // Bright blue accent
+  --success: #10b981;           // Soft green
+  --bg: #0f172a;                // Elegant dark blue background
+  --surface: #1e293b;           // Lighter surface
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-hover: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(74, 144, 226, 0.3);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.9);
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-dimmed: rgba(255, 255, 255, 0.4);
+}
+```
+
+## Realm Color System
+
+Each category (realm) has its own color theme with CSS custom properties:
+
+### Color Classes
+
+```scss
+.realm-green {
+  --realm-color: #58ee2b;
+  --realm-color-light: rgba(88, 238, 43, 0.2);
+  --realm-color-medium: rgba(88, 238, 43, 0.5);
+}
+
+.realm-blue {
+  --realm-color: #3b82f6;
+  --realm-color-light: rgba(59, 130, 246, 0.2);
+  --realm-color-medium: rgba(59, 130, 246, 0.5);
+}
+
+.realm-purple {
+  --realm-color: #a855f7;
+  --realm-color-light: rgba(168, 85, 247, 0.2);
+  --realm-color-medium: rgba(168, 85, 247, 0.5);
+}
+
+.realm-orange {
+  --realm-color: #f97316;
+  --realm-color-light: rgba(249, 115, 22, 0.2);
+  --realm-color-medium: rgba(249, 115, 22, 0.5);
+}
+
+.realm-circle {
+  --realm-color: #f9bc16;
+  --realm-color-light: rgba(249, 188, 22, 0.2);
+  --realm-color-medium: rgba(249, 188, 22, 0.5);
+}
+
+.realm-innovation {
+  --realm-color: #b916f9;
+  --realm-color-light: rgba(185, 22, 249, 0.2);
+  --realm-color-medium: rgba(185, 22, 249, 0.5);
+}
+
+.realm-heal {
+  --realm-color: #f91616;
+  --realm-color-light: rgba(249, 22, 22, 0.2);
+  --realm-color-medium: rgba(249, 22, 22, 0.5);
+}
+
+.realm-study {
+  --realm-color: #16c4f9;
+  --realm-color-light: rgba(22, 196, 249, 0.2);
+  --realm-color-medium: rgba(22, 196, 249, 0.5);
+}
+
+.realm-funny {
+  --realm-color: #f9ea16;
+  --realm-color-light: rgba(249, 234, 22, 0.2);
+  --realm-color-medium: rgba(249, 234, 22, 0.5);
+}
+```
+
+### Usage
+
+Apply realm colors to any element:
+
+```html
+<ion-card class="realm-card neon-border realm-blue">
+  <!-- Card content inherits --realm-color variables -->
+</ion-card>
+```
+
+## Glassmorphism Effects
+
+Glassmorphism creates a frosted glass appearance using transparency and blur:
+
+### Quest Cards
+
+```scss
+.quest-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(2rem);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 
+    0 15px 50px -15px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+}
+```
+
+### Realm Cards
+
+```scss
+ion-card.realm-card {
+  --background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+```
+
+### Header/Footer
+
+```scss
+.header-toolbar,
+.footer-toolbar {
+  --background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(2rem);
+  --border-width: 1px 0 0 0;
+  --border-color: rgba(255, 255, 255, 0.08);
+}
+```
+
+<Note>
+  `backdrop-filter: blur()` requires hardware acceleration. It may not work in all browsers.
+</Note>
+
+## Neon Border Effects
+
+Neon borders use glowing box shadows for a cyberpunk aesthetic:
+
+```scss
+ion-card.realm-card.neon-border {
+  border: 1px solid var(--realm-color);
+  box-shadow:
+    0 0 20px var(--realm-color-medium),
+    0 0 40px var(--realm-color-light),
+    inset 0 0 20px var(--realm-color-light);
+}
+
+ion-card.realm-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 30px var(--realm-color-medium),
+    0 0 60px var(--realm-color-light),
+    inset 0 0 30px var(--realm-color-light);
+}
+```
+
+### Glow Classes for Quests
+
+```scss
+.quest-card.glow-primary {
+  border-color: var(--border-active);
+  background: linear-gradient(135deg,
+    rgba(74, 144, 226, 0.05) 0%,
+    var(--card-bg) 50%);
+  box-shadow: 
+    0 15px 50px -15px rgb(10 24 113 / 86%),
+    inset 0 1px 0 rgb(4 25 255), 
+    0 0 40px -10px rgb(0 117 255),
+    inset 0 0 30px -15px rgba(74, 144, 226, 0.15);
+}
+```
+
+## TailwindCSS Integration
+
+Tareas uses TailwindCSS utility classes for rapid styling:
+
+### Common Utilities
+
+```html
+<!-- Flexbox layout -->
+<div class="flex gap-3 flex-1"></div>
+
+<!-- Text styling -->
+<ion-label class="text-[10px] font-black uppercase tracking-widest">
+  Quest Name
+</ion-label>
+
+<!-- Grid layout -->
+<div class="grid grid-cols-5 gap-3">
+  <button class="icon-btn">...</button>
+</div>
+
+<!-- Spacing -->
+<div class="mb-6 p-5">
+  <!-- Content -->
+</div>
+```
+
+### Form Fields
+
+```html
+<div class="form-field mb-6">
+  <ion-label class="field-label text-[10px] font-black text-quest-blue uppercase tracking-widest mb-3 block">
+    <ion-icon name="edit_note" class="mr-2 text-sm"></ion-icon>
+    Nombre de la Misión
+  </ion-label>
+  <div class="input-box">
+    <input type="text" class="native-input" />
+  </div>
+</div>
+```
+
+## Custom SCSS Styles
+
+### Input Boxes
+
+```scss
+.input-box {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 8px;
+  
+  &:focus-within {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.native-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+```
+
+### Buttons
+
+```scss
+// Cancel button
+.cancel-btn {
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 59, 48, 0.1);
+    border-color: rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+    transform: scale(1.02);
+  }
+}
+
+// Primary action button
+.forge-btn {
+  padding: 20px 0;
+  background: var(--realm-color);
+  color: #000000;
+  font-weight: 900;
+  font-size: 0.875rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px var(--realm-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  
+  &:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: 0 15px 40px var(--realm-color-medium);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+```
+
+## Animations
+
+### Pulse Glow
+
+Used for category icons:
+
+```scss
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+}
+
+.realm-icon-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+```
+
+### Shimmer
+
+Loading skeleton effect:
+
+```scss
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+  animation: shimmer 2s infinite;
+}
+```
+
+### Fade In
+
+Entry animation for cards:
+
+```scss
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+ion-card.realm-card {
+  animation: fadeIn 0.6s ease-out;
+}
+```
+
+## Icon Effects
+
+### Glowing Icons
+
+```scss
+.realm-icon {
+  font-size: 3rem;
+  color: var(--realm-color);
+  filter: drop-shadow(0 0 10px var(--realm-color-medium));
+}
+
+.quest-icon {
+  font-size: 1.75rem;
+  filter: drop-shadow(0 0 8px currentColor) 
+          drop-shadow(0 0 16px currentColor);
+}
+```
+
+### Difficulty Flames
+
+```scss
+.difficulty-flame {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &.active {
+    color: var(--realm-color);
+  }
+}
+```
+
+## Responsive Design
+
+Mobile-optimized styles:
+
+```scss
+@media (max-width: 768px) {
+  ion-card.realm-card {
+    margin: 6px;
+    --border-radius: 12px;
+  }
+
+  .realm-icon-bg {
+    height: 100px;
+  }
+
+  .realm-icon {
+    font-size: 2.5rem;
+  }
+
+  .kingdom-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .realm-icon-bg {
+    height: 80px;
+  }
+
+  .realm-icon {
+    font-size: 2rem;
+  }
+}
+```
+
+## Dark Mode
+
+Tareas uses a dark-only theme. The app imports Ionic's high-contrast dark palette:
+
+```scss
+@import '@ionic/angular/css/palettes/high-contrast.system.css';
+```
+
+Background color is set globally:
+
+```scss
+ion-content {
+  --background: #0d140b;
+}
+
+ion-header {
+  background: rgba(13, 20, 11, 0.8);
+}
+```
+
+## Typography
+
+### Font Weights
+
+- `font-weight: 400` - Regular text
+- `font-weight: 500` - Medium emphasis
+- `font-weight: 700` - Bold headings
+- `font-weight: 900` - Heavy (titles, buttons)
+
+### Text Shadows
+
+Text shadows add depth and glow:
+
+```scss
+.quest-title {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.realm-title {
+  color: var(--realm-color);
+  text-shadow: 0 0 10px var(--realm-color);
+}
+
+.time-left {
+  text-shadow: 0 0 8px currentColor;
+}
+```
+
+## Source Code Reference
+
+- Global styles: `src/global.scss:1`
+- Color variables: `src/global.scss:40`
+- Quest card styles: `src/global.scss:304`
+- Realm card styles: `src/app/components/shared/card-category/card-category.component.scss:1`
+- Form styles: `src/app/components/edits/new-quest/new-quest.component.scss:1`
+- Gesture feedback: `src/app/components/quest-cards/quest-cards.component.scss:6`

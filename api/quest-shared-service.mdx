@@ -1,0 +1,307 @@
+---
+title: "QuestSharedService"
+description: "Shared event service for coordinating quest UI refresh across components"
+---
+
+## Overview
+
+The `QuestSharedService` is a lightweight event coordination service that enables communication between different components in the Tareas application. It uses RxJS observables to notify components when quest data should be refreshed.
+
+## Use Case
+
+This service is particularly useful when one component modifies quest data (e.g., creating or updating a quest) and other components need to refresh their view to display the latest data.
+
+## Features
+
+- Simple event-based refresh mechanism
+- Observable-based architecture using RxJS
+- Decoupled component communication
+- Singleton service (providedIn: 'root')
+
+---
+
+## Observable Streams
+
+### refresh$
+
+An observable stream that emits whenever a quest refresh should be triggered.
+
+```typescript
+refresh$: Observable<void>
+```
+
+<ResponseField name="Observable<void>" type="Observable">
+  Observable stream that emits `void` values. Subscribe to this stream to receive refresh notifications.
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { QuestSharedService } from './common/services/questshared.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-quest-list',
+  templateUrl: './quest-list.component.html'
+})
+export class QuestListComponent implements OnInit, OnDestroy {
+  private refreshSubscription: Subscription;
+
+  constructor(private questSharedService: QuestSharedService) {}
+
+  ngOnInit() {
+    // Listen for refresh events
+    this.refreshSubscription = this.questSharedService.refresh$.subscribe(() => {
+      console.log('Refresh triggered - reloading quests');
+      this.loadQuests();
+    });
+  }
+
+  ngOnDestroy() {
+    // Clean up subscription
+    this.refreshSubscription?.unsubscribe();
+  }
+
+  loadQuests() {
+    // Reload quest data
+    console.log('Loading fresh quest data...');
+  }
+}
+```
+
+---
+
+## Methods
+
+### triggerRefresh()
+
+Triggers a refresh event that notifies all subscribers to reload their quest data.
+
+```typescript
+triggerRefresh(): void
+```
+
+<ResponseField name="void" type="void">
+  This method does not return a value. It emits a refresh event to all `refresh$` subscribers.
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { QuestSharedService } from './common/services/questshared.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-create-quest',
+  templateUrl: './create-quest.component.html'
+})
+export class CreateQuestComponent {
+  constructor(private questSharedService: QuestSharedService) {}
+
+  async createQuest(questData: any) {
+    // Save the new quest
+    await this.saveQuestToDatabase(questData);
+
+    console.log('Quest created successfully');
+
+    // Notify other components to refresh their quest lists
+    this.questSharedService.triggerRefresh();
+
+    // Navigate back or close modal
+    this.closeModal();
+  }
+
+  private async saveQuestToDatabase(questData: any): Promise<void> {
+    // Database save logic
+  }
+
+  private closeModal(): void {
+    // Modal close logic
+  }
+}
+```
+
+---
+
+## Common Patterns
+
+### Pattern 1: Create-and-Refresh Workflow
+
+When creating a new quest, trigger a refresh to update all quest lists:
+
+```typescript
+import { QuestSharedService } from './common/services/questshared.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-quest-form',
+  templateUrl: './quest-form.component.html'
+})
+export class QuestFormComponent {
+  constructor(private questSharedService: QuestSharedService) {}
+
+  onSubmit(quest: Quest) {
+    // 1. Save the quest
+    this.questService.createQuest(quest).then(() => {
+      // 2. Trigger refresh across all components
+      this.questSharedService.triggerRefresh();
+      
+      // 3. Show success message
+      this.showToast('Quest created successfully!');
+    });
+  }
+}
+```
+
+### Pattern 2: Multi-Component Coordination
+
+Coordinate updates between multiple views:
+
+<Tabs>
+  <Tab title="Quest List Component">
+    ```typescript
+    // Component that displays quests
+    import { Component, OnInit, OnDestroy } from '@angular/core';
+    import { QuestSharedService } from './common/services/questshared.service';
+    import { Subscription } from 'rxjs';
+
+    @Component({
+      selector: 'app-quest-list',
+      templateUrl: './quest-list.component.html'
+    })
+    export class QuestListComponent implements OnInit, OnDestroy {
+      quests: Quest[] = [];
+      private refreshSub: Subscription;
+
+      constructor(
+        private questService: QuestService,
+        private questSharedService: QuestSharedService
+      ) {}
+
+      ngOnInit() {
+        this.loadQuests();
+        
+        // Subscribe to refresh events
+        this.refreshSub = this.questSharedService.refresh$.subscribe(() => {
+          this.loadQuests();
+        });
+      }
+
+      loadQuests() {
+        this.questService.getQuests().subscribe(quests => {
+          this.quests = quests;
+        });
+      }
+
+      ngOnDestroy() {
+        this.refreshSub?.unsubscribe();
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Quest Editor Component">
+    ```typescript
+    // Component that modifies quests
+    import { Component } from '@angular/core';
+    import { QuestSharedService } from './common/services/questshared.service';
+
+    @Component({
+      selector: 'app-quest-editor',
+      templateUrl: './quest-editor.component.html'
+    })
+    export class QuestEditorComponent {
+      constructor(
+        private questService: QuestService,
+        private questSharedService: QuestSharedService
+      ) {}
+
+      updateQuest(quest: Quest) {
+        this.questService.updateQuest(quest).then(() => {
+          // Notify all components to refresh
+          this.questSharedService.triggerRefresh();
+        });
+      }
+
+      deleteQuest(questId: string) {
+        this.questService.deleteQuest(questId).then(() => {
+          // Notify all components to refresh
+          this.questSharedService.triggerRefresh();
+        });
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Pattern 3: Complete Quest Workflow
+
+Handle quest completion with automatic UI updates:
+
+```typescript
+import { Component } from '@angular/core';
+import { QuestSharedService } from './common/services/questshared.service';
+
+@Component({
+  selector: 'app-quest-card',
+  templateUrl: './quest-card.component.html'
+})
+export class QuestCardComponent {
+  constructor(
+    private questService: QuestService,
+    private questSharedService: QuestSharedService
+  ) {}
+
+  async completeQuest(quest: Quest) {
+    // Mark quest as completed
+    await this.questService.completeQuest(quest.id);
+
+    // Show completion animation/reward
+    await this.showCompletionAnimation();
+
+    // Trigger refresh to update all quest lists
+    this.questSharedService.triggerRefresh();
+
+    // Show reward notification
+    this.showRewardNotification(quest.xpReward);
+  }
+
+  private async showCompletionAnimation(): Promise<void> {
+    // Animation logic
+  }
+
+  private showRewardNotification(xp: number): void {
+    console.log(`You earned ${xp} XP!`);
+  }
+}
+```
+
+---
+
+## Architecture Notes
+
+<Info>
+  The service uses a `BehaviorSubject` internally, which means:
+  - New subscribers receive the latest value immediately (initially `undefined`)
+  - All subscribers are notified when `triggerRefresh()` is called
+  - The subject is exposed as an observable (`refresh$`) to prevent external modifications
+</Info>
+
+<Tip>
+  Always remember to unsubscribe from `refresh$` in your component's `ngOnDestroy()` to prevent memory leaks.
+</Tip>
+
+---
+
+## When to Use
+
+Use `QuestSharedService` when:
+
+- A component creates, updates, or deletes a quest
+- Multiple components display quest data and need to stay synchronized
+- You want to decouple components that modify data from components that display data
+- You need a lightweight event bus for quest-related updates
+
+<Warning>
+  This service only triggers refresh events. It does not store or manage quest data itself. Use `QuestService` for actual quest data management.
+</Warning>

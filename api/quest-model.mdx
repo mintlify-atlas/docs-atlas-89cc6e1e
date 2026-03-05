@@ -1,0 +1,170 @@
+---
+title: "Quest Model"
+description: "Complete reference for the Quest interface used throughout the Tareas app"
+---
+
+## Overview
+
+The `Quest` interface represents a gamified task in the Tareas application. Each quest has associated metadata including difficulty, rewards, categories, and tracking information.
+
+## TypeScript Interface
+
+```typescript
+export interface Quest {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  icon: string;
+  colorClass: string;
+  glowClass: string;
+  kingdom: string;
+  dueDate: string;
+  difficulty: number;
+  xpReward: number;
+  reward: string;
+  badges: string[];
+  tags: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  progress?: number;
+  timeLeft?: string;
+  status?: 'pending' | 'in-progress' | 'completed';
+  completed?: boolean;
+  completedAt?: Date;
+  difficultyArray?: boolean[];
+}
+```
+
+## Fields
+
+### Core Fields
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the quest
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  The name/title of the quest displayed to users
+</ResponseField>
+
+<ResponseField name="category" type="string" required>
+  The category this quest belongs to (e.g., 'design', 'dev', 'marketing')
+</ResponseField>
+
+<ResponseField name="description" type="string" required>
+  Detailed description of what the quest entails
+</ResponseField>
+
+### Visual Styling
+
+<ResponseField name="icon" type="string" required>
+  Icon identifier or path used to visually represent the quest
+</ResponseField>
+
+<ResponseField name="colorClass" type="string" required>
+  CSS class name for the quest's color theme
+</ResponseField>
+
+<ResponseField name="glowClass" type="string" required>
+  CSS class name for glow effects applied to the quest card
+</ResponseField>
+
+### Classification
+
+<ResponseField name="kingdom" type="string" required>
+  The kingdom or realm this quest is associated with in the gamification system
+</ResponseField>
+
+<ResponseField name="badges" type="string[]" required>
+  Array of badge identifiers that can be earned by completing this quest
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" required>
+  Array of tags for categorizing and filtering quests
+</ResponseField>
+
+### Difficulty & Rewards
+
+<ResponseField name="difficulty" type="number" required>
+  Numeric difficulty level of the quest (typically 1-5)
+</ResponseField>
+
+<ResponseField name="xpReward" type="number" required>
+  Amount of experience points awarded upon quest completion
+</ResponseField>
+
+<ResponseField name="reward" type="string" required>
+  Description of the reward given for completing the quest
+</ResponseField>
+
+<ResponseField name="difficultyArray" type="boolean[]">
+  Array representation of difficulty (e.g., [true, true, false, false, false] for difficulty 2/5)
+</ResponseField>
+
+### Scheduling
+
+<ResponseField name="dueDate" type="string" required>
+  ISO 8601 formatted string representing when the quest is due
+</ResponseField>
+
+<ResponseField name="timeLeft" type="string">
+  Human-readable string showing time remaining until due date (e.g., "2 days left")
+</ResponseField>
+
+### Progress Tracking
+
+<ResponseField name="status" type="'pending' | 'in-progress' | 'completed'">
+  Current status of the quest
+  - `pending`: Quest has not been started
+  - `in-progress`: Quest is currently being worked on
+  - `completed`: Quest has been finished
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  Completion progress as a percentage (0-100)
+</ResponseField>
+
+<ResponseField name="completed" type="boolean">
+  Flag indicating whether the quest has been completed
+</ResponseField>
+
+### Timestamps
+
+<ResponseField name="createdAt" type="Date">
+  Timestamp when the quest was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="Date">
+  Timestamp of the last update to the quest
+</ResponseField>
+
+<ResponseField name="completedAt" type="Date">
+  Timestamp when the quest was marked as completed
+</ResponseField>
+
+## Usage Example
+
+```typescript
+const quest: Quest = {
+  id: 'quest-123',
+  title: 'Design Hero Banner',
+  category: 'design',
+  description: 'Create an engaging hero banner for the landing page',
+  icon: 'brush',
+  colorClass: 'color-design',
+  glowClass: 'glow-purple',
+  kingdom: 'Creative Realm',
+  dueDate: '2026-03-10T00:00:00Z',
+  difficulty: 3,
+  xpReward: 150,
+  reward: 'Design Master Badge',
+  badges: ['design-master', 'creative-pro'],
+  tags: ['ui', 'design', 'banner'],
+  status: 'in-progress',
+  progress: 60,
+  completed: false,
+  createdAt: new Date('2026-03-01'),
+  updatedAt: new Date('2026-03-05')
+};
+```

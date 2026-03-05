@@ -1,80 +1,181 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Tareas in under 5 minutes - clone, install, and run your gamified task management app
 ---
 
-## Get started in three steps
+## Get Up and Running
 
-Get your documentation site running locally and make your first customization.
+Tareas is a gamified task management mobile app built with Ionic Angular that transforms boring tasks into exciting quests with XP, difficulty levels, and visual effects inspired by video games.
 
-### Step 1: Set up your local environment
+<Steps>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Step title="Clone the Repository">
 
-### Step 2: Deploy your changes
+Clone the Tareas repository to your local machine:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```bash
+git clone https://github.com/MiguelAPalaciosC/tareas.git
+cd tareas
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+</Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Step title="Install Dependencies">
 
-### Step 3: Go live
+Install all required packages using your preferred package manager:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<CodeGroup>
 
-## Next steps
+```bash npm
+npm install
+```
 
-Now that you have your docs running, explore these key features:
+```bash yarn
+yarn install
+```
+
+```bash pnpm
+pnpm install
+```
+
+</CodeGroup>
+
+This will install Angular 20+, Ionic 8+, Capacitor 8+, and all other dependencies defined in `package.json`.
+
+</Step>
+
+<Step title="Start Development Server">
+
+Launch the Ionic development server:
+
+```bash
+npm start
+```
+
+The app will automatically open in your default browser at `http://localhost:8100`.
+
+<Note>
+  The development server uses Angular's live reload feature - changes to your code will automatically refresh the browser.
+</Note>
+
+</Step>
+
+<Step title="Create Your First Quest">
+
+Once the app is running, you can create your first gamified task:
+
+1. Click the floating **+** button
+2. Fill in the quest details:
+   - **Title**: Your task name
+   - **Description**: Task details
+   - **Category**: Select from available categories (Diseño, Desarrollo, Marketing, etc.)
+   - **Difficulty**: Easy (1 flame), Medium (2 flames), or Hard (3 flames)
+3. Click **Crear** to forge your quest
+
+```typescript
+// Quest Model Structure (src/app/common/models/quest.model.ts)
+export interface Quest {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  icon: string;
+  colorClass: string;
+  glowClass: string;
+  kingdom: string;
+  dueDate: string;
+  difficulty: number;  // 1, 2, or 3
+  xpReward: number;
+  reward: string;
+  badges: string[];
+  tags: string[];
+  status?: 'pending' | 'in-progress' | 'completed';
+  completed?: boolean;
+}
+```
+
+</Step>
+
+<Step title="Interact with Quests">
+
+Tareas uses intuitive swipe gestures powered by Ionic Gesture Controller:
+
+**Swipe Right** → Complete the quest and earn XP
+```typescript
+// From src/app/components/quest-cards/quest-cards.component.ts:196-209
+if (ev.deltaX > threshold) {
+  // Swipe a la derecha: completar quest
+  console.log('Completing quest:', quest.title);
+  const completed = this.questService.completeQuest(quest.id);
+  if (completed) {
+    cardEl.style.transform = 'translateX(100%)';
+    cardEl.style.transition = 'transform 0.3s ease-out';
+  }
+}
+```
+
+**Swipe Left** → Delete the quest
+```typescript
+// From src/app/components/quest-cards/quest-cards.component.ts:210-223
+else if (ev.deltaX < -threshold) {
+  // Swipe a la izquierda: eliminar quest
+  console.log('Deleting quest:', quest.title);
+  const deleted = this.questService.deleteQuest(quest.id);
+  if (deleted) {
+    cardEl.style.transform = 'translateX(-100%)';
+    cardEl.style.transition = 'transform 0.3s ease-out';
+  }
+}
+```
+
+</Step>
+
+</Steps>
+
+## What's Next?
+
+Now that you have Tareas running locally, explore these features:
+
+- **Category Management**: Navigate to `/categories` to create and manage quest categories
+- **Filter by Category**: Use the horizontal category slider on the home page to filter quests
+- **Quest Service**: Check out `src/app/common/services/quest.service.ts` for data management
+- **Routing**: Explore the app structure in `src/app/app.routes.ts`
 
 <CardGroup cols={2}>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
+<Card title="Installation Guide" icon="download" href="/installation">
+  Detailed setup instructions for all platforms
 </Card>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
+<Card title="Architecture" icon="sitemap" href="#">
+  Learn about the app's component structure
 </Card>
 
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Quick Reference
+
+### Available Scripts
+
+```json
+// From package.json
+"scripts": {
+  "start": "ng serve",
+  "build": "ng build",
+  "watch": "ng build --watch --configuration development",
+  "test": "ng test",
+  "lint": "ng lint"
+}
+```
+
+### Core Technologies
+
+- **Angular**: v20.0.0 with standalone components
+- **Ionic**: v8.7.17 for mobile UI
+- **Capacitor**: v8.0.1 for native functionality
+- **RxJS**: v7.8.0 for reactive programming
+- **TypeScript**: v5.9.0
+
+<Warning>
+  The app uses localStorage for data persistence. Your quests will persist between browser sessions but won't sync across devices.
+</Warning>

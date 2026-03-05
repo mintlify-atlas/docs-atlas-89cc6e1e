@@ -1,0 +1,198 @@
+---
+title: "Web Build"
+description: "Build and deploy the Tareas web application for production"
+---
+
+## Overview
+
+Tareas can be built as a Progressive Web App (PWA) for deployment to web hosting platforms. This guide covers building the application for web deployment.
+
+## Development Build
+
+For local development with hot-reload:
+
+```bash
+# Start development server
+ionic serve
+```
+
+This will start the Ionic development server, typically on `http://localhost:8100`.
+
+Alternatively, you can use Angular's development server:
+
+```bash
+# Using Angular CLI
+ng serve
+
+# Or using npm script
+npm start
+```
+
+## Production Build
+
+<Steps>
+  <Step title="Build the application">
+    Build the Angular application for production:
+
+    ```bash
+    npm run build --configuration production
+    ```
+
+    Or using Angular CLI directly:
+
+    ```bash
+    ng build --configuration production
+    ```
+
+    This creates an optimized production build with:
+    - Minified JavaScript and CSS
+    - Tree-shaking for smaller bundle sizes
+    - Ahead-of-Time (AOT) compilation
+    - Production environment configuration
+  </Step>
+
+  <Step title="Locate build output">
+    The production build files are generated in the `www/` directory at the root of your project.
+
+    ```
+    tareas/
+    └── www/
+        ├── index.html
+        ├── main.[hash].js
+        ├── polyfills.[hash].js
+        ├── runtime.[hash].js
+        └── assets/
+    ```
+  </Step>
+
+  <Step title="Verify the build">
+    Check that all files were generated successfully:
+
+    ```bash
+    ls -la www/
+    ```
+  </Step>
+</Steps>
+
+## Testing the Build Locally
+
+Before deploying, test the production build locally:
+
+<CodeGroup>
+```bash Using http-server
+# Install http-server globally
+npm install -g http-server
+
+# Serve the www directory
+http-server www/ -p 8080
+```
+
+```bash Using Python
+# Using Python 3
+cd www
+python -m http.server 8080
+```
+
+```bash Using npx serve
+# No installation needed
+npx serve www/ -p 8080
+```
+</CodeGroup>
+
+Then open `http://localhost:8080` in your browser to test the production build.
+
+## Build Configuration
+
+The build process uses Angular's build system. You can customize build settings in `angular.json`.
+
+<Note>
+The production configuration automatically:
+- Enables production mode
+- Optimizes bundle sizes
+- Generates source maps (optional)
+- Applies performance budgets
+</Note>
+
+## Deployment Options
+
+Once built, deploy the contents of the `www/` directory to:
+
+### Static Hosting Platforms
+- **Netlify**: Drag-and-drop the `www/` folder or connect your Git repository
+- **Vercel**: Deploy with `vercel --prod` from the project root
+- **Firebase Hosting**: Use `firebase deploy` after configuring firebase.json
+- **GitHub Pages**: Push the `www/` contents to a `gh-pages` branch
+- **AWS S3**: Upload the `www/` directory to an S3 bucket with static hosting enabled
+
+### Example: Deploy to Netlify
+
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Deploy
+netlify deploy --prod --dir=www
+```
+
+## Watch Mode
+
+For development with automatic rebuilds on file changes:
+
+```bash
+npm run watch
+```
+
+This runs `ng build --watch --configuration development` and rebuilds when source files change.
+
+## Troubleshooting
+
+### Build Fails with Memory Error
+
+Increase Node.js memory limit:
+
+```bash
+export NODE_OPTIONS="--max-old-space-size=4096"
+npm run build --configuration production
+```
+
+### Module Not Found Errors
+
+Ensure all dependencies are installed:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Environment Variables Not Applied
+
+<Warning>
+Make sure you have configured your environment files:
+- `src/environments/environment.ts` for development
+- `src/environments/environment.prod.ts` for production
+
+If these don't exist, copy from the example:
+```bash
+cp src/environments/environment.example.ts src/environments/environment.ts
+```
+</Warning>
+
+### Build Size Too Large
+
+Check bundle sizes:
+
+```bash
+ng build --configuration production --stats-json
+npx webpack-bundle-analyzer www/stats.json
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Android Deployment" icon="android" href="/deployment/android">
+    Build and deploy to Android devices
+  </Card>
+  <Card title="iOS Deployment" icon="apple" href="/deployment/ios">
+    Build and deploy to iOS devices
+  </Card>
+</CardGroup>

@@ -1,0 +1,532 @@
+---
+title: "iOS Deployment"
+description: "Build and deploy Tareas to iOS devices and simulators"
+---
+
+## Overview
+
+Tareas uses Capacitor to package the web application as a native iOS app. This guide covers building and deploying to iOS devices, simulators, and the App Store.
+
+<Warning>
+**macOS Required**
+
+iOS development requires a Mac with macOS. You cannot build iOS apps on Windows or Linux.
+</Warning>
+
+## Prerequisites
+
+### Required Software
+
+- **macOS** 12.0 or later
+- **Xcode** 14.0 or later (latest stable version recommended)
+- **Node.js** 18+ and npm 9+
+- **CocoaPods** - Dependency manager for iOS
+- **Apple Developer Account** (for physical device testing and App Store deployment)
+
+### Install Xcode
+
+<Steps>
+  <Step title="Download Xcode">
+    Install Xcode from the Mac App Store:
+    - Open the **App Store** app
+    - Search for "Xcode"
+    - Click **Install**
+    
+    Alternatively, download from [developer.apple.com/xcode](https://developer.apple.com/xcode/)
+  </Step>
+
+  <Step title="Install Command Line Tools">
+    After Xcode installation:
+
+    ```bash
+    xcode-select --install
+    ```
+  </Step>
+
+  <Step title="Accept Xcode License">
+    ```bash
+    sudo xcodebuild -license accept
+    ```
+  </Step>
+</Steps>
+
+### Install CocoaPods
+
+CocoaPods manages iOS dependencies:
+
+```bash
+sudo gem install cocoapods
+```
+
+Verify installation:
+
+```bash
+pod --version
+```
+
+## Initial Capacitor Setup
+
+<Steps>
+  <Step title="Install dependencies">
+    Make sure all npm packages are installed:
+
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Add iOS platform">
+    Add the iOS platform to your Capacitor project:
+
+    ```bash
+    npx cap add ios
+    ```
+
+    This creates an `ios/` directory with the native iOS project.
+  </Step>
+
+  <Step title="Sync project files">
+    Synchronize your web build with the native iOS project:
+
+    ```bash
+    npx cap sync ios
+    ```
+
+    This command:
+    - Copies web assets to the iOS project
+    - Updates native dependencies
+    - Installs CocoaPods dependencies
+  </Step>
+</Steps>
+
+## Building for iOS
+
+### Development Build
+
+<Steps>
+  <Step title="Build the web app">
+    Create a production build of the web application:
+
+    ```bash
+    npm run build --configuration production
+    ```
+  </Step>
+
+  <Step title="Sync with iOS">
+    Copy the web assets to the iOS project:
+
+    ```bash
+    npx cap sync ios
+    ```
+  </Step>
+
+  <Step title="Open in Xcode">
+    Open the iOS project in Xcode:
+
+    ```bash
+    npx cap open ios
+    ```
+
+    This opens the `.xcworkspace` file in Xcode.
+  </Step>
+
+  <Step title="Configure signing">
+    In Xcode:
+    - Select the **App** target in the project navigator
+    - Go to **Signing & Capabilities** tab
+    - Select your **Team** (Apple Developer account)
+    - Xcode will automatically manage signing certificates
+  </Step>
+
+  <Step title="Run on simulator or device">
+    - Select a simulator or connected device from the device dropdown
+    - Click the **Run** button (▶️) or press **Cmd + R**
+  </Step>
+</Steps>
+
+### Alternative: Using Ionic CLI
+
+```bash
+# Build and run in one command
+ionic capacitor build ios
+```
+
+This builds the web app and opens the project in Xcode.
+
+## Running on Simulator
+
+### Using Xcode
+
+<Steps>
+  <Step title="Open project">
+    ```bash
+    npx cap open ios
+    ```
+  </Step>
+
+  <Step title="Select simulator">
+    In Xcode, click the device dropdown and select a simulator:
+    - iPhone 15 Pro
+    - iPhone 15
+    - iPad Pro (12.9-inch)
+    - etc.
+  </Step>
+
+  <Step title="Build and run">
+    Click the **Run** button or press **Cmd + R**.
+    
+    The simulator will launch and the app will be installed automatically.
+  </Step>
+</Steps>
+
+### Using Command Line
+
+List available simulators:
+
+```bash
+xcrun simctl list devices
+```
+
+Boot a simulator:
+
+```bash
+xcrun simctl boot "iPhone 15 Pro"
+```
+
+Build and run:
+
+```bash
+ionic capacitor run ios
+```
+
+## Running on Physical Device
+
+<Warning>
+**Apple Developer Account Required**
+
+To deploy to a physical iOS device, you need:
+- An Apple Developer account (free or paid)
+- A registered device (for free accounts)
+- Proper provisioning profile and signing certificate
+</Warning>
+
+<Steps>
+  <Step title="Connect your device">
+    Connect your iPhone or iPad to your Mac via USB cable.
+  </Step>
+
+  <Step title="Trust your computer">
+    On your iOS device:
+    - A prompt will appear asking to "Trust This Computer?"
+    - Tap **Trust** and enter your device passcode
+  </Step>
+
+  <Step title="Open project in Xcode">
+    ```bash
+    npx cap open ios
+    ```
+  </Step>
+
+  <Step title="Configure signing">
+    In Xcode:
+    - Select the **App** target
+    - Go to **Signing & Capabilities**
+    - Check **Automatically manage signing**
+    - Select your **Team**
+  </Step>
+
+  <Step title="Select your device">
+    From the device dropdown, select your physical device (e.g., "Miguel's iPhone").
+  </Step>
+
+  <Step title="Build and run">
+    Click **Run** (▶️) or press **Cmd + R**.
+    
+    Xcode will:
+    - Build the app
+    - Install it on your device
+    - Launch the app automatically
+  </Step>
+
+  <Step title="Trust developer certificate (first time only)">
+    On your device:
+    - Go to **Settings > General > VPN & Device Management**
+    - Tap on your developer certificate
+    - Tap **Trust**
+  </Step>
+</Steps>
+
+## Complete Workflow
+
+Typical development workflow:
+
+<CodeGroup>
+```bash First time setup
+# Install dependencies
+npm install
+
+# Add iOS platform
+npx cap add ios
+
+# Install CocoaPods dependencies
+npx cap sync ios
+```
+
+```bash Regular development
+# 1. Build web app
+npm run build --configuration production
+
+# 2. Sync with iOS
+npx cap sync ios
+
+# 3. Open in Xcode
+npx cap open ios
+
+# 4. Build and run from Xcode
+```
+
+```bash Using Ionic CLI
+# Build and open in Xcode
+ionic capacitor build ios
+
+# Or build and run directly
+ionic capacitor run ios
+```
+</CodeGroup>
+
+## Troubleshooting
+
+### CocoaPods Installation Issues
+
+If CocoaPods fails to install or update:
+
+```bash
+# Update CocoaPods
+sudo gem install cocoapods
+
+# Update pod repository
+pod repo update
+
+# Clean and reinstall pods
+cd ios/App
+rm -rf Pods Podfile.lock
+pod install
+```
+
+### Signing Errors
+
+<Warning>
+Common signing issues:
+
+**"No signing certificate found"**
+- Ensure you're logged into Xcode with your Apple ID
+- Go to **Xcode > Preferences > Accounts** and sign in
+
+**"No provisioning profiles found"**
+- Enable **Automatically manage signing** in Xcode
+- Xcode will create the necessary profiles
+
+**"Failed to register bundle identifier"**
+- Change the Bundle Identifier in Xcode to something unique
+- Format: `com.yourcompany.tareas`
+</Warning>
+
+### Device Not Recognized
+
+If your device doesn't appear in Xcode:
+
+1. Unlock your device
+2. Disconnect and reconnect the USB cable
+3. Trust the computer again if prompted
+4. Restart Xcode
+5. Check cable (try a different USB port or cable)
+
+### Build Fails After Dependency Updates
+
+Clean and rebuild:
+
+```bash
+# Clean project
+cd ios/App
+xcodebuild clean
+
+# Reinstall pods
+rm -rf Pods Podfile.lock
+pod install
+
+# Sync again
+cd ../..
+npx cap sync ios
+```
+
+### Simulator Not Launching
+
+Reset the simulator:
+
+```bash
+# List simulators
+xcrun simctl list devices
+
+# Erase a specific simulator
+xcrun simctl erase "iPhone 15 Pro"
+
+# Or reset all simulators
+xcrun simctl erase all
+```
+
+### App Crashes on Launch
+
+View logs in Xcode:
+- Open **Window > Devices and Simulators**
+- Select your device
+- View console logs in the lower panel
+
+Or use Console.app:
+- Open **Console.app** on macOS
+- Filter by your app name or "Capacitor"
+
+## App Store Deployment
+
+### Prepare for Release
+
+<Steps>
+  <Step title="Update app configuration">
+    In Xcode, update:
+    - **Version** (e.g., 1.0.0)
+    - **Build number** (increment for each submission)
+    - **App Icons** (all required sizes)
+    - **Launch Screen**
+  </Step>
+
+  <Step title="Create App Store Connect record">
+    1. Go to [App Store Connect](https://appstoreconnect.apple.com)
+    2. Click **My Apps > +**
+    3. Create a new app
+    4. Fill in app information
+  </Step>
+
+  <Step title="Archive the app">
+    In Xcode:
+    - Select **Any iOS Device (arm64)** as the destination
+    - Go to **Product > Archive**
+    - Wait for the archive to complete
+  </Step>
+
+  <Step title="Upload to App Store Connect">
+    When the archive finishes:
+    - The **Organizer** window opens automatically
+    - Select your archive
+    - Click **Distribute App**
+    - Choose **App Store Connect**
+    - Follow the wizard to upload
+  </Step>
+
+  <Step title="Submit for review">
+    In App Store Connect:
+    - Complete all required metadata
+    - Add screenshots for all device sizes
+    - Submit for App Store review
+  </Step>
+</Steps>
+
+<Note>
+Apple's review process typically takes 24-48 hours. Ensure your app complies with the [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/).
+</Note>
+
+### TestFlight Beta Testing
+
+Before public release, test with TestFlight:
+
+1. After uploading to App Store Connect, the build appears in **TestFlight**
+2. Add internal testers (up to 100)
+3. Add external testers (requires beta app review)
+4. Testers receive an invitation email
+5. They install via the **TestFlight** app
+
+## Configuration Files
+
+### Update Bundle Identifier
+
+In `capacitor.config.json`:
+
+```json
+{
+  "appId": "com.yourcompany.tareas",
+  "appName": "Tareas",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
+```
+
+### Update App Icons
+
+Place app icons in:
+```
+ios/App/App/Assets.xcassets/AppIcon.appiconset/
+```
+
+Required sizes: 20pt, 29pt, 40pt, 60pt, 76pt, 83.5pt, 1024pt (all at 1x, 2x, and 3x).
+
+### Update Launch Screen
+
+Edit the storyboard:
+```
+ios/App/App/Base.lproj/LaunchScreen.storyboard
+```
+
+Or use Capacitor's splash screen plugin.
+
+## Live Reload on Device
+
+For faster development, use live reload:
+
+<Steps>
+  <Step title="Find your local IP">
+    ```bash
+    ifconfig | grep "inet " | grep -v 127.0.0.1
+    ```
+  </Step>
+
+  <Step title="Start dev server">
+    ```bash
+    ionic serve
+    ```
+  </Step>
+
+  <Step title="Update capacitor config">
+    Temporarily add to `capacitor.config.json`:
+
+    ```json
+    {
+      "server": {
+        "url": "http://YOUR_LOCAL_IP:8100",
+        "cleartext": true
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Sync and run">
+    ```bash
+    npx cap sync ios
+    npx cap open ios
+    ```
+
+    Run on your device - it will load from your dev server with live reload.
+  </Step>
+</Steps>
+
+<Warning>
+**Remember to remove the server configuration before production builds!**
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Android Deployment" icon="android" href="/deployment/android">
+    Build and deploy to Android devices
+  </Card>
+  <Card title="Web Build" icon="globe" href="/deployment/web-build">
+    Deploy as a web application
+  </Card>
+</CardGroup>

@@ -1,0 +1,378 @@
+---
+title: "Android Deployment"
+description: "Build and deploy Tareas to Android devices and emulators"
+---
+
+## Overview
+
+Tareas uses Capacitor to package the web application as a native Android app. This guide covers the complete Android deployment process.
+
+## Prerequisites
+
+<Warning>
+**Required Software:**
+- Node.js 18+ and npm 9+
+- **Java Development Kit (JDK) 21** - Required for Android builds
+- **Android Studio** - Latest stable version
+- Android SDK with at least API level 24 (Android 7.0)
+</Warning>
+
+### Install Android Studio
+
+1. Download Android Studio from [developer.android.com/studio](https://developer.android.com/studio)
+2. Install Android Studio and follow the setup wizard
+3. Install the Android SDK and build tools
+4. Configure the `ANDROID_HOME` environment variable:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/tools/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
+
+### Verify Java Installation
+
+<Note>
+Tareas requires **Java 21** as specified in the project README.
+</Note>
+
+```bash
+java -version
+# Should show: openjdk version "21.x.x"
+```
+
+## Initial Capacitor Setup
+
+<Steps>
+  <Step title="Install dependencies">
+    Make sure all npm packages are installed:
+
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Add Android platform">
+    Add the Android platform to your Capacitor project:
+
+    ```bash
+    npx cap add android
+    ```
+
+    This creates an `android/` directory with the native Android project.
+  </Step>
+
+  <Step title="Sync project files">
+    Synchronize your web build with the native Android project:
+
+    ```bash
+    npx cap sync
+    ```
+
+    Then sync Android-specific files:
+
+    ```bash
+    npx cap sync android
+    ```
+  </Step>
+</Steps>
+
+## Building for Android
+
+### Development Build
+
+For testing during development:
+
+<Steps>
+  <Step title="Build the web app">
+    First, create a production build of the web application:
+
+    ```bash
+    npm run build --configuration production
+    ```
+  </Step>
+
+  <Step title="Sync with Android">
+    Copy the web assets to the Android project:
+
+    ```bash
+    npx cap sync android
+    ```
+  </Step>
+
+  <Step title="Run on device/emulator">
+    Launch the app on a connected device or emulator:
+
+    ```bash
+    npx cap run android
+    ```
+
+    This command will:
+    - List available devices/emulators
+    - Prompt you to select one
+    - Build and install the APK
+    - Launch the app automatically
+  </Step>
+</Steps>
+
+### Alternative: Using Ionic CLI
+
+```bash
+# Build and run in one command
+ionic capacitor run android -l --external
+```
+
+The `-l` flag enables live reload, and `--external` makes it accessible on your local network.
+
+### Build APK for Testing
+
+To build an APK file for distribution:
+
+```bash
+# Build using Ionic CLI
+ionic capacitor build android
+```
+
+Or build manually in Android Studio:
+
+1. Open the project in Android Studio:
+   ```bash
+   npx cap open android
+   ```
+
+2. In Android Studio:
+   - Select **Build > Build Bundle(s) / APK(s) > Build APK(s)**
+   - Wait for the build to complete
+   - Find the APK in `android/app/build/outputs/apk/debug/app-debug.apk`
+
+<Note>
+The project includes a pre-built APK at `/app-debug.apk` in the root directory for testing.
+</Note>
+
+## Running on Emulator
+
+### Create an Android Virtual Device (AVD)
+
+<Steps>
+  <Step title="Open AVD Manager">
+    In Android Studio, go to **Tools > Device Manager** (or **AVD Manager**).
+  </Step>
+
+  <Step title="Create new device">
+    - Click **Create Device**
+    - Select a device definition (e.g., Pixel 5)
+    - Choose a system image (API level 24 or higher)
+    - Finish the setup
+  </Step>
+
+  <Step title="Launch emulator">
+    Start the emulator from AVD Manager or via command line:
+
+    ```bash
+    emulator -avd Pixel_5_API_33
+    ```
+  </Step>
+
+  <Step title="Deploy to emulator">
+    With the emulator running:
+
+    ```bash
+    npx cap run android
+    ```
+  </Step>
+</Steps>
+
+## Running on Physical Device
+
+<Steps>
+  <Step title="Enable Developer Options">
+    On your Android device:
+    - Go to **Settings > About phone**
+    - Tap **Build number** 7 times
+    - Developer options will be enabled
+  </Step>
+
+  <Step title="Enable USB Debugging">
+    - Go to **Settings > System > Developer options**
+    - Enable **USB debugging**
+  </Step>
+
+  <Step title="Connect device">
+    Connect your device via USB and verify:
+
+    ```bash
+    adb devices
+    ```
+
+    You should see your device listed. If prompted on the device, allow USB debugging.
+  </Step>
+
+  <Step title="Deploy to device">
+    ```bash
+    npx cap run android
+    ```
+
+    Select your physical device from the list.
+  </Step>
+</Steps>
+
+## Complete Workflow
+
+The typical development workflow:
+
+<CodeGroup>
+```bash First time setup
+# Install dependencies
+npm install
+
+# Add Android platform
+npx cap add android
+
+# Initial sync
+npx cap sync
+```
+
+```bash Regular development
+# 1. Build web app
+npm run build --configuration production
+
+# 2. Sync with Android
+npx cap sync android
+
+# 3. Run on device
+npx cap run android
+```
+
+```bash Quick iteration
+# Build and run with live reload
+ionic capacitor run android -l --external
+```
+</CodeGroup>
+
+## Troubleshooting
+
+### Gradle Build Fails
+
+**Solution:** Check Java version (must be JDK 21):
+
+```bash
+java -version
+```
+
+If using the wrong version, update `JAVA_HOME`:
+
+```bash
+export JAVA_HOME=/path/to/jdk-21
+```
+
+### SDK Location Not Found
+
+**Solution:** Create `android/local.properties` with:
+
+```properties
+sdk.dir=/path/to/Android/Sdk
+```
+
+Or set the `ANDROID_HOME` environment variable.
+
+### Device Not Detected
+
+<Warning>
+If `adb devices` shows no devices:
+1. Check USB cable connection
+2. Try a different USB port
+3. Restart adb: `adb kill-server && adb start-server`
+4. Verify USB debugging is enabled on the device
+5. Try revoking USB debugging authorizations on the device and reconnecting
+</Warning>
+
+### App Crashes on Launch
+
+Check logs:
+
+```bash
+adb logcat | grep -i capacitor
+```
+
+Or view logs in Android Studio's **Logcat** panel.
+
+### Sync Errors
+
+If `npx cap sync` fails, try:
+
+```bash
+# Remove and re-add Android platform
+npx cap remove android
+npx cap add android
+npx cap sync android
+```
+
+### Build Errors After Dependency Updates
+
+Clean and rebuild:
+
+```bash
+cd android
+./gradlew clean
+cd ..
+npx cap sync android
+```
+
+## Production Release
+
+For releasing to the Google Play Store:
+
+### Generate Signing Key
+
+```bash
+keytool -genkey -v -keystore tareas-release-key.keystore \
+  -alias tareas -keyalg RSA -keysize 2048 -validity 10000
+```
+
+### Configure Signing in Android Studio
+
+1. Open `android/app/build.gradle`
+2. Add signing configuration:
+
+```gradle
+android {
+    signingConfigs {
+        release {
+            storeFile file("tareas-release-key.keystore")
+            storePassword "your-password"
+            keyAlias "tareas"
+            keyPassword "your-password"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}
+```
+
+### Build Release APK/AAB
+
+In Android Studio:
+- **Build > Generate Signed Bundle / APK**
+- Select **Android App Bundle** for Play Store
+- Follow the wizard to create a signed release
+
+<Note>
+Google Play Store requires Android App Bundle (AAB) format for new apps.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="iOS Deployment" icon="apple" href="/deployment/ios">
+    Build and deploy to iOS devices
+  </Card>
+  <Card title="Web Build" icon="globe" href="/deployment/web-build">
+    Deploy as a web application
+  </Card>
+</CardGroup>

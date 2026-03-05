@@ -1,0 +1,328 @@
+---
+title: "Category Selector Component"
+description: "Horizontal scrollable category selector with single or multiple selection support"
+---
+
+## Overview
+
+The `CardCategoryHorizontallyComponent` is a reusable component that displays categories in a horizontal scrollable list. It supports both single and multiple selection modes and emits selected categories to parent components.
+
+## Features
+
+- **Horizontal Scroll**: Categories displayed in a scrollable horizontal layout
+- **Single/Multiple Selection**: Configure selection mode via `@Input`
+- **Pre-selection Support**: Can pre-select categories by name
+- **Visual Feedback**: Active state styling for selected categories
+- **Icon & Color Customization**: Each category has its own icon and color class
+- **LocalStorage Integration**: Loads and saves categories using CategoryService
+
+## Component Definition
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    @Component({
+      selector: 'app-card-category-horizontally',
+      templateUrl: './card-category-horizontally.component.html',
+      standalone: true,
+      imports: [CommonModule, IonIcon, IonCard]
+    })
+    export class CardCategoryHorizontallyComponent implements OnInit {
+      @Input() multiple = false;
+      @Input() selectedCategoryName?: string;
+      @Output() categorySelected = new EventEmitter<Category[]>();
+      
+      categoryData: Category[] = [];
+      selectedCategoryIds: string[] = [];
+      
+      constructor(private categoryService: CategoryService) {}
+    }
+    ```
+  </Tab>
+  <Tab title="Template">
+    ```html
+    <ion-card class="categories-container px-4 py-3">
+      <div class="categories-scroll">
+        @for (category of categoryData; track category.id) {
+          <div class="category-mini-card" (click)="selectCategory(category)">
+            <div class="icon-circle-wrapper" [ngClass]="category.colorClass">
+              <div class="icon-circle" 
+                   [ngClass]="[category.colorClass, 
+                               selectedCategoryIds.includes(category.id) ? 'active' : '']">
+                <ion-icon [name]="category.icon" class="category-icon"></ion-icon>
+              </div>
+            </div>
+            <span class="category-name">{{ category.name }}</span>
+          </div>
+        }
+      </div>
+    </ion-card>
+    ```
+  </Tab>
+</Tabs>
+
+## Input Properties
+
+<ParamField path="multiple" type="boolean" default="false">
+  Enables multiple category selection. When `false`, only one category can be selected at a time.
+</ParamField>
+
+<ParamField path="selectedCategoryName" type="string" optional>
+  Pre-selects a category by its name. Useful when editing existing data.
+</ParamField>
+
+## Output Events
+
+<ParamField path="categorySelected" type="EventEmitter<Category[]>">
+  Emits an array of selected categories whenever the selection changes. Always emits an array, even in single-selection mode.
+</ParamField>
+
+## Category Model
+
+The component works with the `Category` interface:
+
+```typescript
+interface Category {
+  id: string;
+  key: string;          // Unique identifier (e.g., 'design', 'dev')
+  name: string;         // Display name (e.g., 'Diseño', 'Desarrollo')
+  colorClass: string;   // CSS class for styling (e.g., 'realm-design')
+  icon: string;         // Ionic icon name (e.g., 'brush', 'terminal')
+}
+```
+
+## Default Categories
+
+The component includes predefined categories:
+
+```typescript
+defaultCategories: Category[] = [
+  { id: '1', key: 'design', name: 'Diseño', colorClass: 'realm-design', icon: 'brush' },
+  { id: '2', key: 'dev', name: 'Desarrollo', colorClass: 'realm-dev', icon: 'terminal' },
+  { id: '3', key: 'marketing', name: 'Marketing', colorClass: 'realm-marketing', icon: 'analytics' },
+  { id: '4', key: 'primary', name: 'Principal', colorClass: 'realm-circle', icon: 'star' },
+  { id: '5', key: 'innovation', name: 'Innovación', colorClass: 'realm-innovation', icon: 'rocket' },
+  { id: '6', key: 'heal', name: 'Salud', colorClass: 'realm-heal', icon: 'heart' },
+  { id: '7', key: 'study', name: 'Estudio', colorClass: 'realm-study', icon: 'school' },
+  { id: '8', key: 'funny', name: 'Diversión', colorClass: 'realm-funny', icon: 'happy' }
+];
+```
+
+## Key Methods
+
+### ngOnInit()
+
+Initializes the component by loading categories from localStorage or using defaults.
+
+```typescript
+ngOnInit() {
+  const savedCategories = this.categoryService.getAll();
+
+  if (savedCategories && savedCategories.length > 0) {
+    this.categoryData = savedCategories;
+  } else {
+    this.categoryData = [...this.defaultCategories];
+    this.categoryData.forEach(cat => this.categoryService.create(cat));
+  }
+
+  // Pre-select category if provided
+  if (this.selectedCategoryName) {
+    const category = this.categoryData.find(cat => cat.name === this.selectedCategoryName);
+    if (category) {
+      this.selectedCategoryIds = [category.id];
+    }
+  }
+}
+```
+
+### selectCategory()
+
+Handles category selection logic for both single and multiple modes.
+
+```typescript
+selectCategory(category: Category) {
+  const index = this.selectedCategoryIds.indexOf(category.id);
+
+  if (index > -1) {
+    // Deselect if already selected
+    this.selectedCategoryIds.splice(index, 1);
+  } else {
+    if (!this.multiple) {
+      // Single selection: clear previous selection
+      this.selectedCategoryIds = [];
+    }
+    this.selectedCategoryIds.push(category.id);
+  }
+
+  // Emit array of selected categories
+  const selectedCategories = this.categoryData.filter(
+    cat => this.selectedCategoryIds.includes(cat.id)
+  );
+  this.categorySelected.emit(selectedCategories);
+}
+```
+
+## Usage Examples
+
+### Single Selection Mode
+
+Use for forms where only one category should be selected:
+
+```typescript
+import { CardCategoryHorizontallyComponent } from './shared/card-category-horizontally';
+
+@Component({
+  template: `
+    <app-card-category-horizontally
+      [multiple]="false"
+      (categorySelected)="onCategorySelected($event)">
+    </app-card-category-horizontally>
+  `
+})
+export class QuestFormComponent {
+  onCategorySelected(categories: Category[]) {
+    const selectedCategory = categories[0];
+    console.log('Selected category:', selectedCategory);
+    
+    // Update form data
+    this.questData.category = selectedCategory.name;
+    this.questData.colorClass = selectedCategory.colorClass;
+    this.questData.icon = selectedCategory.icon;
+  }
+}
+```
+
+### Multiple Selection Mode
+
+Use for filtering where multiple categories can be selected:
+
+```typescript
+@Component({
+  template: `
+    <app-card-category-horizontally
+      [multiple]="true"
+      (categorySelected)="onCategoriesSelected($event)">
+    </app-card-category-horizontally>
+  `
+})
+export class QuestListComponent {
+  selectedCategories: string[] = [];
+
+  onCategoriesSelected(categories: Category[]) {
+    this.selectedCategories = categories.map(c => c.name);
+    this.filterQuests();
+  }
+
+  filterQuests() {
+    if (this.selectedCategories.length === 0) {
+      // Show all quests
+      this.displayedQuests = this.allQuests;
+    } else {
+      // Filter by selected categories
+      this.displayedQuests = this.allQuests.filter(
+        quest => this.selectedCategories.includes(quest.category)
+      );
+    }
+  }
+}
+```
+
+### Pre-selected Category
+
+Use when editing existing data:
+
+```typescript
+@Component({
+  template: `
+    <app-card-category-horizontally
+      [multiple]="false"
+      [selectedCategoryName]="questData.category"
+      (categorySelected)="onCategorySelected($event)">
+    </app-card-category-horizontally>
+  `
+})
+export class EditQuestComponent {
+  questData = {
+    category: 'Desarrollo',  // This will be pre-selected
+    // ... other fields
+  };
+}
+```
+
+## Visual States
+
+The component has two visual states:
+
+### Default State
+
+- Light background for category cards
+- Normal opacity
+- Standard icon size
+
+### Active State (Selected)
+
+- Enhanced glow effect using category color class
+- Increased opacity
+- Visual indicator that category is selected
+
+```scss
+.icon-circle {
+  &.active {
+    // Enhanced styling for selected state
+    box-shadow: 0 0 20px currentColor;
+    transform: scale(1.1);
+  }
+}
+```
+
+## Color Classes
+
+Each category has a unique color class:
+
+- `realm-design` - Blue tones for design
+- `realm-dev` - Purple/green tones for development
+- `realm-marketing` - Orange tones for marketing
+- `realm-circle` - Special color for principal category
+- `realm-innovation` - Innovative color scheme
+- `realm-heal` - Health-related color (red/pink)
+- `realm-study` - Study-related color
+- `realm-funny` - Fun/entertainment color
+
+## Accessibility
+
+<Note>
+  The component uses semantic HTML and click handlers that work with both mouse and keyboard events.
+</Note>
+
+## Integration with CategoryService
+
+The component integrates with the `CategoryService` for persistence:
+
+```typescript
+constructor(private categoryService: CategoryService) {}
+
+ngOnInit() {
+  // Load from localStorage
+  const savedCategories = this.categoryService.getAll();
+  
+  // Save defaults if none exist
+  if (!savedCategories || savedCategories.length === 0) {
+    this.defaultCategories.forEach(cat => 
+      this.categoryService.create(cat)
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Always handle the emitted array**: Even in single-selection mode, the component emits an array
+2. **Check array length**: Before accessing `categories[0]`, verify the array isn't empty
+3. **Use pre-selection wisely**: Only use `selectedCategoryName` when editing existing data
+4. **Clear selection**: Users can deselect by clicking the selected category again
+
+## Related Components
+
+- [Quest Form](/components/quest-form) - Uses category selector for quest creation
+- [Quest Cards](/components/quest-cards) - Uses category selector for filtering
+- [Shared Components](/components/shared-components) - Other shared UI components

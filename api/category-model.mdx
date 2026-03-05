@@ -1,0 +1,104 @@
+---
+title: "Category Model"
+description: "Complete reference for the Category interface used to organize quests"
+---
+
+## Overview
+
+The `Category` interface defines the structure for quest categories in the Tareas application. Categories help organize quests into themed groups with distinct visual styling.
+
+## TypeScript Interface
+
+```typescript
+export interface Category {
+  id: string;
+  key: 'design' | 'dev' | 'marketing' | 'primary' | 'innovation' | 'strategy' | 'heal' | 'study' | 'funny';
+  name: string;
+  colorClass: string;
+  icon: string;
+}
+```
+
+## Fields
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the category
+</ResponseField>
+
+<ResponseField name="key" type="'design' | 'dev' | 'marketing' | 'primary' | 'innovation' | 'strategy' | 'heal' | 'study' | 'funny'" required>
+  Programmatic key used to reference the category. Must be one of the predefined values:
+  - `design`: Creative and design-related tasks
+  - `dev`: Development and programming tasks
+  - `marketing`: Marketing and promotional activities
+  - `primary`: Primary or essential tasks
+  - `innovation`: Innovation and R&D activities
+  - `strategy`: Strategic planning tasks
+  - `heal`: Health and wellness activities
+  - `study`: Learning and educational tasks
+  - `funny`: Fun or recreational activities
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human-readable display name for the category
+</ResponseField>
+
+<ResponseField name="colorClass" type="string" required>
+  CSS class name that defines the color theme for this category
+</ResponseField>
+
+<ResponseField name="icon" type="string" required>
+  Icon identifier or name used to visually represent the category
+</ResponseField>
+
+## Category Keys Explained
+
+### design
+For creative tasks including UI/UX design, graphic design, and visual content creation.
+
+### dev
+For software development tasks including coding, debugging, and technical implementation.
+
+### marketing
+For marketing activities including campaigns, content marketing, and brand promotion.
+
+### primary
+For high-priority or essential tasks that don't fit other categories.
+
+### innovation
+For research, experimentation, and innovative projects.
+
+### strategy
+For strategic planning, business analysis, and long-term planning tasks.
+
+### heal
+For health, wellness, and self-care activities.
+
+### study
+For learning, training, and educational pursuits.
+
+### funny
+For entertainment, team building, and fun activities.
+
+## Usage Example
+
+```typescript
+const category: Category = {
+  id: 'cat-001',
+  key: 'design',
+  name: 'Design',
+  colorClass: 'category-purple',
+  icon: 'brush-outline'
+};
+
+const devCategory: Category = {
+  id: 'cat-002',
+  key: 'dev',
+  name: 'Development',
+  colorClass: 'category-blue',
+  icon: 'code-slash-outline'
+};
+```
+
+## Related
+
+- [Quest Model](/api/quest-model) - Uses category field to link to a Category

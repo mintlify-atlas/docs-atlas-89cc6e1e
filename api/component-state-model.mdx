@@ -1,0 +1,110 @@
+---
+title: "ComponentState Model"
+description: "Complete reference for the ComponentState interface used for managing component state"
+---
+
+## Overview
+
+The `ComponentState` interface defines the structure for managing the state of components in the Tareas application. It tracks active tabs, user progress, loading states, and processed quest data.
+
+## TypeScript Interface
+
+```typescript
+import { Quest } from "./quest.model";
+
+export interface ComponentState {
+  activeTab: string;
+  userXp: number;
+  isLoading: boolean;
+  processedQuests: Quest[];
+}
+```
+
+## Fields
+
+<ResponseField name="activeTab" type="string" required>
+  Identifier for the currently active tab in the component. Used for tab navigation and displaying the appropriate content.
+</ResponseField>
+
+<ResponseField name="userXp" type="number" required>
+  The user's current experience points (XP) accumulated from completed quests. This value is used to track user progress and level advancement.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean" required>
+  Loading state indicator. When `true`, the component is fetching or processing data. When `false`, data loading is complete.
+</ResponseField>
+
+<ResponseField name="processedQuests" type="Quest[]" required>
+  Array of Quest objects that have been processed and are ready for display. This includes quests with computed properties like progress, timeLeft, and status.
+</ResponseField>
+
+## Usage
+
+The `ComponentState` interface is typically used in Angular components to maintain and manage UI state. It centralizes key state variables that affect the component's rendering and behavior.
+
+### Common Use Cases
+
+1. **Tab Management**: Track which tab is currently active in multi-tab interfaces
+2. **User Progress**: Display user XP and level information
+3. **Loading States**: Show loading indicators while data is being fetched
+4. **Quest Display**: Store and render processed quest data
+
+## Usage Example
+
+```typescript
+import { ComponentState } from './models/componentstate.model';
+import { Quest } from './models/quest.model';
+
+export class QuestBoardComponent {
+  state: ComponentState = {
+    activeTab: 'all-quests',
+    userXp: 1250,
+    isLoading: true,
+    processedQuests: []
+  };
+
+  ngOnInit() {
+    this.loadQuests();
+  }
+
+  loadQuests() {
+    this.state.isLoading = true;
+    
+    this.questService.getQuests().subscribe(quests => {
+      this.state.processedQuests = this.processQuests(quests);
+      this.state.isLoading = false;
+    });
+  }
+
+  switchTab(tabId: string) {
+    this.state.activeTab = tabId;
+  }
+
+  updateUserXp(xpGained: number) {
+    this.state.userXp += xpGained;
+  }
+}
+```
+
+## State Management Pattern
+
+```typescript
+// Initialize state
+const initialState: ComponentState = {
+  activeTab: 'pending',
+  userXp: 0,
+  isLoading: false,
+  processedQuests: []
+};
+
+// Update state immutably
+const newState: ComponentState = {
+  ...initialState,
+  activeTab: 'completed',
+  processedQuests: filteredQuests
+};
+```
+
+## Related
+
+- [Quest Model](/api/quest-model) - The Quest interface used in processedQuests array

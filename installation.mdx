@@ -1,0 +1,525 @@
+---
+title: Installation
+description: Complete setup guide for Tareas - prerequisites, environment configuration, and platform-specific instructions
+---
+
+## Prerequisites
+
+Before installing Tareas, ensure you have the following tools installed on your system:
+
+### Required Software
+
+<AccordionGroup>
+
+<Accordion title="Node.js 18+" icon="node-js">
+
+Tareas requires Node.js version 18 or higher.
+
+**Check your version:**
+```bash
+node --version
+```
+
+**Download:** Visit [nodejs.org](https://nodejs.org/) and install the LTS version.
+
+</Accordion>
+
+<Accordion title="Java 21" icon="java">
+
+Required for Android development and building APKs.
+
+**Check your version:**
+```bash
+java --version
+```
+
+**Download:** Install [OpenJDK 21](https://adoptium.net/) or Oracle JDK 21.
+
+<Note>
+  Set the `JAVA_HOME` environment variable to your JDK installation path.
+</Note>
+
+</Accordion>
+
+<Accordion title="npm 9+ or yarn 1.22+" icon="box">
+
+Package manager for installing dependencies.
+
+**Check npm version:**
+```bash
+npm --version
+```
+
+**Update npm:**
+```bash
+npm install -g npm@latest
+```
+
+**Install yarn (optional):**
+```bash
+npm install -g yarn
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+### Platform-Specific Requirements
+
+<Tabs>
+  <Tab title="Android">
+    
+**Android Studio**
+
+Required for building and running the app on Android devices.
+
+1. Download [Android Studio](https://developer.android.com/studio)
+2. Install Android SDK Platform 34 (or latest)
+3. Configure Android SDK path in environment variables:
+   ```bash
+   export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+   export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
+   ```
+
+**Android SDK Command-Line Tools**
+
+Install via Android Studio SDK Manager or download directly.
+
+  </Tab>
+  <Tab title="iOS">
+    
+**Xcode** (macOS only)
+
+Required for building and running the app on iOS devices.
+
+1. Download Xcode from the Mac App Store
+2. Install Xcode Command Line Tools:
+   ```bash
+   xcode-select --install
+   ```
+3. Accept the license agreement:
+   ```bash
+   sudo xcodebuild -license accept
+   ```
+
+**CocoaPods**
+
+```bash
+sudo gem install cocoapods
+```
+
+<Warning>
+  iOS development requires a Mac with macOS and an Apple Developer account for device testing.
+</Warning>
+
+  </Tab>
+</Tabs>
+
+---
+
+## Installation Steps
+
+<Steps>
+
+<Step title="Clone the Repository">
+
+Get the latest version of Tareas from GitHub:
+
+```bash
+git clone https://github.com/MiguelAPalaciosC/tareas.git
+cd tareas
+```
+
+</Step>
+
+<Step title="Install Dependencies">
+
+Install all required packages using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install
+```
+
+```bash yarn
+yarn install
+```
+
+```bash pnpm
+pnpm install
+```
+
+</CodeGroup>
+
+This installs all dependencies from `package.json`, including:
+
+- **Angular 20.0.0** - Core framework
+- **Ionic 8.7.17** - Mobile UI components
+- **Capacitor 8.0.1** - Native runtime
+- **Angular Fire 20.0.1** - Firebase integration
+- **RxJS 7.8.0** - Reactive programming
+- **TypeScript 5.9.0** - Type safety
+
+</Step>
+
+<Step title="Environment Configuration">
+
+Tareas uses Firebase for backend services. Configure your environment:
+
+**Development Environment**
+
+The app includes a development configuration at `src/environments/environment.ts`:
+
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  firebase: {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.firebasestorage.app",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    measurementId: "YOUR_MEASUREMENT_ID"
+  }
+};
+```
+
+**Production Environment**
+
+Update `src/environments/environment.prod.ts` with production credentials:
+
+```typescript
+// src/environments/environment.prod.ts
+export const environment = {
+  production: true,
+  firebase: {
+    // Production Firebase config
+  }
+};
+```
+
+<Note>
+  The app uses localStorage for data persistence by default. Firebase configuration is optional for basic functionality.
+</Note>
+
+</Step>
+
+<Step title="Verify Installation">
+
+Confirm everything is set up correctly:
+
+**1. Check Angular CLI**
+```bash
+ng version
+```
+
+**2. Start Development Server**
+```bash
+npm start
+# or
+ng serve
+```
+
+Expected output:
+```
+✔ Browser application bundle generation complete.
+✔ Built in X seconds
+
+** Angular Live Development Server is listening on localhost:8100 **
+```
+
+**3. Open in Browser**
+
+Navigate to `http://localhost:8100` - you should see the Tareas home page with the quest list.
+
+</Step>
+
+</Steps>
+
+---
+
+## Platform Setup
+
+### Web Development
+
+No additional setup required. The app runs in the browser using Angular's development server.
+
+```bash
+# Development with live reload
+npm start
+
+# Production build
+npm run build
+```
+
+Output directory: `www/`
+
+### Android Development
+
+<Steps>
+
+<Step title="Add Android Platform">
+
+Add Capacitor Android platform:
+
+```bash
+npx cap add android
+```
+
+</Step>
+
+<Step title="Sync Project Files">
+
+Sync web assets to the Android project:
+
+```bash
+npx cap sync
+# or specifically for Android
+npx cap sync android
+```
+
+</Step>
+
+<Step title="Configure Capacitor">
+
+The Android configuration is defined in `capacitor.config.ts`:
+
+```typescript
+// capacitor.config.ts
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'io.ionic.starter',
+  appName: 'Quest App',
+  webDir: 'www',
+  server: {
+    androidScheme: 'https',
+    hostname: 'localhost',
+    iosScheme: 'ionic',
+    allowNavigation: ['*']
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  }
+};
+
+export default config;
+```
+
+</Step>
+
+<Step title="Run on Android">
+
+**Option 1: Run in emulator or device**
+```bash
+npx cap run android
+```
+
+**Option 2: Open in Android Studio**
+```bash
+npx cap open android
+```
+
+Then build and run from Android Studio.
+
+**Option 3: Build APK for testing**
+```bash
+ng build --configuration production
+npx cap sync
+ionic capacitor build android
+```
+
+</Step>
+
+</Steps>
+
+<Note>
+  A pre-built APK is available in the repository root: `/app-debug.apk`
+</Note>
+
+### iOS Development
+
+<Steps>
+
+<Step title="Add iOS Platform">
+
+```bash
+npx cap add ios
+```
+
+</Step>
+
+<Step title="Sync Project Files">
+
+```bash
+npx cap sync ios
+```
+
+</Step>
+
+<Step title="Open in Xcode">
+
+```bash
+npx cap open ios
+```
+
+</Step>
+
+<Step title="Configure Signing">
+
+1. Open the project in Xcode
+2. Select the target under "Targets"
+3. Go to "Signing & Capabilities"
+4. Select your development team
+5. Build and run on simulator or device
+
+</Step>
+
+</Steps>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Port 8100 already in use" icon="circle-exclamation">
+
+If the development server fails to start:
+
+```bash
+# Kill process using port 8100
+lsof -ti:8100 | xargs kill -9
+
+# Or use a different port
+ng serve --port 8200
+```
+
+</Accordion>
+
+<Accordion title="Capacitor sync fails" icon="mobile">
+
+Ensure you've built the web assets before syncing:
+
+```bash
+# Build the Angular app first
+npm run build
+
+# Then sync to native platforms
+npx cap sync
+```
+
+</Accordion>
+
+<Accordion title="Android build fails - SDK not found" icon="android">
+
+Set the Android SDK path:
+
+```bash
+# Linux/macOS
+export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+
+# Windows (PowerShell)
+$env:ANDROID_SDK_ROOT="C:\Users\YourName\AppData\Local\Android\Sdk"
+```
+
+Or configure in `gradle.properties`:
+
+```properties
+sdk.dir=/path/to/Android/Sdk
+```
+
+</Accordion>
+
+<Accordion title="Java version mismatch" icon="java">
+
+Tareas requires Java 21. If you have multiple Java versions:
+
+```bash
+# Set JAVA_HOME to Java 21
+export JAVA_HOME=/path/to/java-21
+
+# Verify
+java --version
+```
+
+</Accordion>
+
+<Accordion title="npm install fails with permissions error" icon="lock">
+
+On Unix systems, avoid using `sudo` with npm:
+
+```bash
+# Configure npm to use a different directory
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+
+# Add to PATH in ~/.bashrc or ~/.zshrc
+export PATH=~/.npm-global/bin:$PATH
+
+# Reload shell and retry
+npm install
+```
+
+</Accordion>
+
+<Accordion title="Module not found errors" icon="puzzle-piece">
+
+Clear caches and reinstall:
+
+```bash
+# Remove node_modules and package-lock
+rm -rf node_modules package-lock.json
+
+# Clear npm cache
+npm cache clean --force
+
+# Reinstall
+npm install
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+Now that Tareas is installed, explore the app:
+
+<CardGroup cols={2}>
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Create your first quest in 5 minutes
+</Card>
+
+<Card title="Architecture" icon="sitemap">
+  Learn about components and services
+</Card>
+
+<Card title="Quest Service" icon="code">
+  Explore the CRUD operations
+</Card>
+
+<Card title="Gestures" icon="hand-pointer">
+  Implement swipe interactions
+</Card>
+
+</CardGroup>
+
+## Additional Resources
+
+- **Angular Documentation**: [angular.dev](https://angular.dev/)
+- **Ionic Framework**: [ionicframework.com](https://ionicframework.com/)
+- **Capacitor**: [capacitorjs.com](https://capacitorjs.com/)
+- **Firebase**: [firebase.google.com](https://firebase.google.com/)
+
+<Warning>
+  For production deployment, ensure you configure proper Firebase security rules and replace the default Firebase credentials.
+</Warning>

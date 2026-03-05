@@ -1,0 +1,296 @@
+---
+title: 'Categories'
+description: 'Organize your quests with themed Categories in Tareas'
+---
+
+## What are Categories?
+
+In Tareas, **Categories** (also called "Kingdoms" or "Realms") are organizational groups that help users classify and theme their quests. Each category has unique visual styling with custom colors, icons, and glow effects.
+
+<Info>
+  Categories provide both functional organization and visual theming, making it easy to distinguish between different types of work at a glance.
+</Info>
+
+## Category Model Structure
+
+Here's the TypeScript interface from the codebase:
+
+```typescript
+export interface Category {
+  id: string;
+  key: 'design' | 'dev' | 'marketing' | 'primary' | 'innovation' | 'strategy' | 'heal' | 'study' | 'funny';
+  name: string;
+  colorClass: string;
+  icon: string;
+}
+```
+
+## Category Properties
+
+<CardGroup cols={2}>
+  <Card title="Identification" icon="id-card">
+    - **id**: Unique identifier (UUID generated with `crypto.randomUUID()`)
+    - **key**: Predefined category type constant
+    - **name**: Display name shown in the UI
+  </Card>
+
+  <Card title="Visual Styling" icon="brush">
+    - **colorClass**: CSS class defining the category's color theme
+    - **icon**: Ionic icon name for visual representation
+  </Card>
+</CardGroup>
+
+## Available Category Types
+
+Tareas includes 9 predefined category types:
+
+```typescript
+const categories: Category[] = [
+  { id: '1', key: 'design', name: 'Diseño', colorClass: 'realm-design', icon: 'brush' },
+  { id: '2', key: 'dev', name: 'Desarrollo', colorClass: 'realm-dev', icon: 'terminal' },
+  { id: '3', key: 'marketing', name: 'Marketing', colorClass: 'realm-marketing', icon: 'analytics' },
+  { id: '4', key: 'primary', name: 'Principal', colorClass: 'realm-circle', icon: 'star' },
+  { id: '5', key: 'innovation', name: 'Innovación', colorClass: 'realm-innovation', icon: 'rocket' },
+  { id: '6', key: 'heal', name: 'Salud', colorClass: 'realm-heal', icon: 'heart' },
+  { id: '7', key: 'study', name: 'Estudio', colorClass: 'realm-study', icon: 'school' },
+  { id: '8', key: 'funny', name: 'Diversión', colorClass: 'realm-funny', icon: 'happy' }
+];
+```
+
+<Accordion title="Category Details">
+  <AccordionGroup>
+    <Accordion title="Design (Diseño)">
+      - **Key**: `design`
+      - **Icon**: `brush`
+      - **Color Class**: `realm-design`
+      - **Use Case**: Creative work, UI/UX design, branding
+    </Accordion>
+
+    <Accordion title="Development (Desarrollo)">
+      - **Key**: `dev`
+      - **Icon**: `terminal`
+      - **Color Class**: `realm-dev`
+      - **Use Case**: Coding, software development, technical tasks
+    </Accordion>
+
+    <Accordion title="Marketing">
+      - **Key**: `marketing`
+      - **Icon**: `analytics`
+      - **Color Class**: `realm-marketing`
+      - **Use Case**: Marketing campaigns, content creation, analytics
+    </Accordion>
+
+    <Accordion title="Primary (Principal)">
+      - **Key**: `primary`
+      - **Icon**: `star`
+      - **Color Class**: `realm-circle`
+      - **Use Case**: High-priority tasks, flagship projects
+    </Accordion>
+
+    <Accordion title="Innovation (Innovación)">
+      - **Key**: `innovation`
+      - **Icon**: `rocket`
+      - **Color Class**: `realm-innovation`
+      - **Use Case**: Experimental projects, R&D, new ideas
+    </Accordion>
+
+    <Accordion title="Health (Salud)">
+      - **Key**: `heal`
+      - **Icon**: `heart`
+      - **Color Class**: `realm-heal`
+      - **Use Case**: Wellness, fitness, self-care activities
+    </Accordion>
+
+    <Accordion title="Study (Estudio)">
+      - **Key**: `study`
+      - **Icon**: `school`
+      - **Color Class**: `realm-study`
+      - **Use Case**: Learning, courses, educational content
+    </Accordion>
+
+    <Accordion title="Fun (Diversión)">
+      - **Key**: `funny`
+      - **Icon**: `happy`
+      - **Color Class**: `realm-funny`
+      - **Use Case**: Entertainment, hobbies, leisure activities
+    </Accordion>
+  </AccordionGroup>
+</Accordion>
+
+## Category Color Theming
+
+Each category has unique color mappings for visual distinction:
+
+```typescript
+getRealmColor(colorClass: string): string {
+  switch(colorClass) {
+    case 'realm-design': return '#3b82f6';  // Blue
+    case 'realm-dev': return '#a855f7';      // Purple
+    case 'realm-marketing': return '#f97316'; // Orange
+    case 'realm-circle': return '#10b981';   // Green
+    case 'realm-innovation': return '#ec4899'; // Pink
+    case 'realm-heal': return '#ef4444';     // Red
+    case 'realm-study': return '#8b5cf6';    // Violet
+    case 'realm-funny': return '#f59e0b';    // Amber
+    default: return '#10b981';               // Default green
+  }
+}
+```
+
+<Tip>
+  The `realm-*` prefix in `colorClass` indicates these are themed "kingdoms" or "realms" in the gamification system.
+</Tip>
+
+## Category Service
+
+The `CategoryService` manages CRUD operations with localStorage persistence:
+
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class CategoryService {
+  private storageKey = 'categories';
+  
+  // Observable for reactive updates
+  private categoriesSubject = new BehaviorSubject<Category[]>(this.loadFromStorage());
+  categories$ = this.categoriesSubject.asObservable();
+
+  // Get all categories
+  getAll(): Category[] {
+    return this.categoriesSubject.value;
+  }
+
+  // Get category by id
+  getById(id: string): Category | undefined {
+    return this.getAll().find(cat => cat.id === id);
+  }
+
+  // Create new category
+  create(category: Omit<Category, 'id'>): Category {
+    const newCategory: Category = {
+      ...category,
+      id: crypto.randomUUID()
+    };
+    const categories = [...this.getAll(), newCategory];
+    this.saveToStorage(categories);
+    return newCategory;
+  }
+
+  // Update category
+  update(id: string, updatedCategory: Partial<Category>): Category | null {
+    const categories = this.getAll().map(cat =>
+      cat.id === id ? { ...cat, ...updatedCategory } : cat
+    );
+    this.saveToStorage(categories);
+    return categories.find(cat => cat.id === id) || null;
+  }
+
+  // Delete category
+  delete(id: string): boolean {
+    const categories = this.getAll().filter(cat => cat.id !== id);
+    const deleted = categories.length < this.getAll().length;
+    this.saveToStorage(categories);
+    return deleted;
+  }
+}
+```
+
+## Creating a Category
+
+Example of creating a new category:
+
+```typescript
+const newCategory = categoryService.create({
+  key: 'dev',
+  name: 'Desarrollo',
+  colorClass: 'realm-dev',
+  icon: 'terminal'
+});
+
+// Returns:
+// {
+//   id: 'generated-uuid-here',
+//   key: 'dev',
+//   name: 'Desarrollo',
+//   colorClass: 'realm-dev',
+//   icon: 'terminal'
+// }
+```
+
+## Quest-Category Relationship
+
+Categories are linked to Quests through the `category` and `kingdom` fields:
+
+```typescript
+interface Quest {
+  category: string;     // Category name or key
+  kingdom: string;      // Associated realm/kingdom
+  colorClass: string;   // Inherits from category
+  glowClass: string;    // Visual effect from category
+  // ... other properties
+}
+```
+
+<Note>
+  When a quest is assigned to a category, it automatically inherits that category's visual properties (colorClass, glowClass, icon).
+</Note>
+
+## Category Filtering
+
+Filter quests by category in the UI:
+
+```typescript
+// From quest.service.ts
+getQuestsByCategory(category: string): Quest[] {
+  return this.quest$.value.filter(quest => quest.category === category);
+}
+```
+
+## Persistence
+
+Categories are stored in localStorage:
+
+```typescript
+private saveToStorage(categories: Category[]) {
+  localStorage.setItem(this.storageKey, JSON.stringify(categories));
+  this.categoriesSubject.next(categories); // Emit changes to subscribers
+}
+
+private loadFromStorage(): Category[] {
+  const data = localStorage.getItem(this.storageKey);
+  return data ? JSON.parse(data) : [];
+}
+```
+
+## Visual Representation
+
+Categories use Ionic's color system and custom CSS:
+
+```typescript
+getColorForUI(colorClass: string): string {
+  switch(colorClass) {
+    case 'realm-design': return 'primary';
+    case 'realm-dev': return 'secondary';
+    case 'realm-marketing': return 'warning';
+    case 'realm-circle': return 'tertiary';
+    case 'realm-innovation': return 'success';
+    case 'realm-heal': return 'medium';
+    case 'realm-study': return 'tertiary';
+    case 'realm-funny': return 'warning';
+    default: return 'primary';
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quests" icon="flag" href="/concepts/quests">
+    Learn how Quests use Categories for organization
+  </Card>
+  
+  <Card title="Gamification" icon="sparkles" href="/concepts/gamification">
+    Discover how categories enhance the gamification experience
+  </Card>
+</CardGroup>

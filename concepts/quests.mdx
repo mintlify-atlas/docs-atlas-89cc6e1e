@@ -1,0 +1,211 @@
+---
+title: 'Quests'
+description: 'Learn about Quests in Tareas - gamified tasks that drive productivity'
+---
+
+## What is a Quest?
+
+In Tareas, a **Quest** is a gamified task or mission that users complete to earn XP (experience points) and progress through their productivity journey. Each quest transforms mundane to-do items into engaging challenges with difficulty levels, rewards, and visual effects.
+
+<Info>
+  Quests are the core building blocks of Tareas, combining traditional task management with RPG-style gamification to boost motivation and engagement.
+</Info>
+
+## Quest Model Structure
+
+Here's the complete TypeScript interface from the codebase:
+
+```typescript
+export interface Quest {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  icon: string;
+  colorClass: string;
+  glowClass: string;
+  kingdom: string;
+  dueDate: string;
+  difficulty: number;
+  xpReward: number;
+  reward: string;
+  badges: string[];
+  tags: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  progress?: number;
+  timeLeft?: string;
+  status?: 'pending' | 'in-progress' | 'completed';
+  completed?: boolean;
+  completedAt?: Date;
+  difficultyArray?: boolean[];
+}
+```
+
+## Core Properties
+
+<CardGroup cols={2}>
+  <Card title="Identification" icon="fingerprint">
+    - **id**: Unique identifier for each quest
+    - **title**: The quest's name/headline
+    - **description**: Detailed explanation of the quest
+  </Card>
+
+  <Card title="Categorization" icon="folder">
+    - **category**: Category name (Design, Dev, Marketing, etc.)
+    - **kingdom**: Associated realm (frontend, backend, etc.)
+    - **tags**: Additional labels like 'TRABAJO PROFUNDO'
+  </Card>
+
+  <Card title="Gamification" icon="gamepad">
+    - **difficulty**: 1 (Easy), 2 (Medium), or 3 (Hard)
+    - **xpReward**: XP earned upon completion
+    - **badges**: Achievement badges collected
+  </Card>
+
+  <Card title="Visual Styling" icon="palette">
+    - **icon**: Ionic icon name (terminal, brush, etc.)
+    - **colorClass**: CSS class for category color (realm-dev, realm-design)
+    - **glowClass**: Neon glow effect class
+  </Card>
+</CardGroup>
+
+## Quest Lifecycle
+
+Quests progress through three distinct states:
+
+```typescript
+status?: 'pending' | 'in-progress' | 'completed'
+```
+
+<Steps>
+  <Step title="Pending">
+    Quest is created and waiting to be started. Default state for new quests.
+  </Step>
+  
+  <Step title="In Progress">
+    User has started working on the quest. Actively tracked in the interface.
+  </Step>
+  
+  <Step title="Completed">
+    Quest is finished! XP reward is granted and `completedAt` timestamp is recorded.
+  </Step>
+</Steps>
+
+## Difficulty Levels
+
+Difficulty is represented both as a number and as a boolean array for UI rendering:
+
+```typescript
+difficultyMap = { 1: 'Fácil', 2: 'Medio', 3: 'Difícil' };
+
+getDifficultyArray(difficulty: number): boolean[] {
+  return [
+    difficulty >= 1,  // First flame
+    difficulty >= 2,  // Second flame
+    difficulty >= 3   // Third flame
+  ];
+}
+```
+
+<Tip>
+  The `difficultyArray` property enables rendering flame icons in the UI - one flame for Easy, two for Medium, three for Hard quests.
+</Tip>
+
+## XP Rewards
+
+Quests reward players with XP based on difficulty:
+
+```typescript
+// Default XP reward
+xpReward: 250,
+reward: '+250 XP'
+
+// Calculate total XP across all quests
+totalXP: quests.reduce((sum, q) => sum + (q.xpReward || 0), 0)
+```
+
+## Real Quest Example
+
+Here's an actual quest from the codebase:
+
+```typescript
+questData: Quest = {
+  id: '',
+  title: '',
+  description: '',
+  category: 'dev',
+  kingdom: 'frontend',
+  icon: 'terminal',
+  colorClass: 'color-blue',
+  glowClass: 'neon-border',
+  dueDate: '',
+  difficulty: 2,
+  xpReward: 250,
+  reward: '+250 XP',
+  badges: [],
+  tags: ['TRABAJO PROFUNDO'],
+  createdAt: new Date(),
+  status: 'pending'
+};
+```
+
+## Quest Service Methods
+
+The `QuestService` provides methods to filter and manage quests:
+
+```typescript
+// Get quests by status
+getQuestsByStatus(status: Quest['status']): Quest[] {
+  return this.quest$.value.filter(quest => quest.status === status);
+}
+
+// Get quests by difficulty
+getQuestsByDifficulty(difficulty: number): Quest[] {
+  return this.quest$.value.filter(quest => quest.difficulty === difficulty);
+}
+
+// Search quests
+searchQuests(query: string): Quest[] {
+  const lowerQuery = query.toLowerCase();
+  return this.quest$.value.filter(quest => 
+    quest.title.toLowerCase().includes(lowerQuery) ||
+    quest.description.toLowerCase().includes(lowerQuery)
+  );
+}
+```
+
+## Quest Statistics
+
+Track progress with comprehensive stats:
+
+```typescript
+getQuestStats() {
+  const quests = this.quest$.value;
+  return {
+    total: quests.length,
+    completed: quests.filter(q => q.status === 'completed').length,
+    pending: quests.filter(q => q.status === 'pending').length,
+    inProgress: quests.filter(q => q.status === 'in-progress').length,
+    totalXP: quests.reduce((sum, q) => sum + (q.xpReward || 0), 0),
+    completedXP: quests.filter(q => q.status === 'completed')
+                       .reduce((sum, q) => sum + (q.xpReward || 0), 0)
+  };
+}
+```
+
+<Note>
+  Quests are persisted in localStorage with the key `'quests'`, ensuring data survives app restarts.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Categories" icon="folder-tree" href="/concepts/categories">
+    Learn how Categories organize Quests into themed kingdoms
+  </Card>
+  
+  <Card title="Gamification" icon="trophy" href="/concepts/gamification">
+    Explore the XP, difficulty, and visual effects system
+  </Card>
+</CardGroup>

@@ -1,0 +1,239 @@
+---
+title: "QuestService"
+description: "Core service for managing quests with caching and search capabilities"
+---
+
+## Overview
+
+The `QuestService` is the primary service for managing quests in the Tareas application. It provides optimized quest retrieval with built-in caching, pagination support, and local search functionality.
+
+## Features
+
+- Cached quest retrieval for improved performance
+- Pagination support for large quest lists
+- Category-based filtering
+- Local search functionality
+- Observable-based architecture using RxJS
+
+---
+
+## Methods
+
+### getQuests()
+
+Retrieves quests with pagination and optional category filtering. Results are cached to avoid redundant queries.
+
+```typescript
+getQuests(page?: number, pageSize?: number, category?: string): Observable<Quest[]>
+```
+
+<ParamField path="page" type="number" default="0">
+  The page number for pagination (zero-based)
+</ParamField>
+
+<ParamField path="pageSize" type="number" default="20">
+  Number of quests to return per page
+</ParamField>
+
+<ParamField path="category" type="string" optional>
+  Filter quests by category. If omitted, returns quests from all categories
+</ParamField>
+
+<ResponseField name="Observable<Quest[]>" type="Observable">
+  Returns an Observable stream of Quest arrays. Results are cached using `shareReplay(1)` for multiple subscribers
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { QuestService } from './common/services/quest.service';
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-quest-list',
+  templateUrl: './quest-list.component.html'
+})
+export class QuestListComponent implements OnInit {
+  quests: Quest[] = [];
+
+  constructor(private questService: QuestService) {}
+
+  ngOnInit() {
+    // Get first page of quests (20 items)
+    this.questService.getQuests().subscribe(quests => {
+      this.quests = quests;
+    });
+
+    // Get second page with 10 items per page
+    this.questService.getQuests(1, 10).subscribe(quests => {
+      this.quests = [...this.quests, ...quests];
+    });
+
+    // Filter by category
+    this.questService.getQuests(0, 20, 'dev').subscribe(quests => {
+      this.quests = quests;
+    });
+  }
+}
+```
+
+---
+
+### searchQuests()
+
+Performs a local search on cached quests, filtering by title or description. This method is optimized for client-side searching to avoid unnecessary server queries.
+
+```typescript
+searchQuests(query: string, cachedQuests: Quest[]): Quest[]
+```
+
+<ParamField path="query" type="string" required>
+  The search term to filter quests. Search is case-insensitive and matches against both title and description
+</ParamField>
+
+<ParamField path="cachedQuests" type="Quest[]" required>
+  Array of quests to search through (typically from a previous `getQuests()` call)
+</ParamField>
+
+<ResponseField name="Quest[]" type="array">
+  Returns a filtered array of quests matching the search query
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { QuestService } from './common/services/quest.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-search',
+  templateUrl: './search.component.html'
+})
+export class SearchComponent {
+  allQuests: Quest[] = [];
+  filteredQuests: Quest[] = [];
+
+  constructor(private questService: QuestService) {
+    // Load all quests first
+    this.questService.getQuests(0, 100).subscribe(quests => {
+      this.allQuests = quests;
+      this.filteredQuests = quests;
+    });
+  }
+
+  onSearchChange(searchTerm: string) {
+    if (searchTerm) {
+      this.filteredQuests = this.questService.searchQuests(
+        searchTerm,
+        this.allQuests
+      );
+    } else {
+      this.filteredQuests = this.allQuests;
+    }
+  }
+}
+```
+
+---
+
+### clearCache()
+
+Clears the internal cache of quest queries. Use this when you need to force a refresh of quest data (e.g., after creating or updating a quest).
+
+```typescript
+clearCache(): void
+```
+
+<ResponseField name="void" type="void">
+  This method does not return a value. It clears all cached quest queries.
+</ResponseField>
+
+#### Usage Example
+
+```typescript
+import { QuestService } from './common/services/quest.service';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-quest-manager',
+  templateUrl: './quest-manager.component.html'
+})
+export class QuestManagerComponent {
+  constructor(private questService: QuestService) {}
+
+  createNewQuest(quest: Quest) {
+    // After creating a new quest
+    this.saveQuest(quest).then(() => {
+      // Clear cache to ensure fresh data on next fetch
+      this.questService.clearCache();
+      
+      // Reload quests
+      this.questService.getQuests().subscribe(quests => {
+        console.log('Fresh quests loaded:', quests);
+      });
+    });
+  }
+
+  refreshQuests() {
+    // Force refresh by clearing cache first
+    this.questService.clearCache();
+    this.questService.getQuests().subscribe(quests => {
+      console.log('Refreshed quests:', quests);
+    });
+  }
+}
+```
+
+---
+
+## Quest Model
+
+The `Quest` interface represents a quest object:
+
+```typescript
+interface Quest {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  icon: string;
+  colorClass: string;
+  glowClass: string;
+  kingdom: string;
+  dueDate: string;
+  difficulty: number;
+  xpReward: number;
+  reward: string;
+  badges: string[];
+  tags: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  progress?: number;
+  timeLeft?: string;
+  status?: 'pending' | 'in-progress' | 'completed';
+  completed?: boolean;
+  completedAt?: Date;
+  difficultyArray?: boolean[];
+}
+```
+
+---
+
+## Caching Behavior
+
+The `QuestService` implements an intelligent caching mechanism:
+
+- Cache keys are generated based on `page`, `pageSize`, and `category` parameters
+- Each unique combination of parameters has its own cache entry
+- Cached observables use `shareReplay(1)` to share results among multiple subscribers
+- Cache persists until explicitly cleared with `clearCache()`
+
+**Cache Key Format:** `quests_{page}_{pageSize}_{category}`
+
+<Tip>
+  Call `clearCache()` after creating, updating, or deleting quests to ensure users see the latest data.
+</Tip>
+
+<Warning>
+  The current implementation uses mock data. In production, this will be replaced with Firestore queries.
+</Warning>

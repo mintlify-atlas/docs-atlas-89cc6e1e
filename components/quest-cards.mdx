@@ -1,0 +1,257 @@
+---
+title: "Quest Cards Component"
+description: "Interactive quest cards with swipe gestures for completing and deleting tasks"
+---
+
+## Overview
+
+The `QuestCardsComponent` is the core component for displaying and interacting with quests in Tareas. It provides a swipeable card interface with smooth animations, skeleton loading states, and category filtering capabilities.
+
+## Features
+
+- **Swipe Gestures**: Swipe right to complete quests, swipe left to delete
+- **Skeleton Loading**: Displays skeleton screens while quests are loading
+- **Category Filtering**: Filter quests by categories using horizontal category selector
+- **Visual Feedback**: Dynamic feedback icons and colors during swipe actions
+- **Completion Animations**: Smooth transitions when completing or deleting quests
+- **Reactive State**: Uses RxJS BehaviorSubject for state management
+
+## Component Structure
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { QuestCardsComponent } from './components/quest-cards/quest-cards.component';
+
+    @Component({
+      selector: 'app-quest-cards',
+      standalone: true,
+      imports: [CommonModule, IonicModule, CardCategoryHorizontallyComponent],
+      templateUrl: './quest-cards.component.html',
+      changeDetection: ChangeDetectionStrategy.OnPush,
+    })
+    export class QuestCardsComponent implements OnInit {
+      state$: Observable<ComponentState>;
+      selectedCategoryNames: string[] = [];
+      
+      constructor(
+        private gestureCtrl: GestureController,
+        private questService: QuestService,
+        private cdr: ChangeDetectorRef,
+        private questSharedService: QuestSharedService
+      ) { }
+    }
+    ```
+  </Tab>
+  <Tab title="Template">
+    ```html
+    <ion-content class="quest-content">
+      <app-card-category-horizontally 
+        [multiple]="true" 
+        (categorySelected)="onCategorySelected($event)">
+      </app-card-category-horizontally>
+
+      @if (state.isLoading) {
+        <div class="quest-list skeleton-container">
+          <div *ngFor="let i of [1,2,3]" class="skeleton-card">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-body"></div>
+            <div class="skeleton-footer"></div>
+          </div>
+        </div>
+      } @else {
+        <div class="quest-list">
+          @for (quest of state.processedQuests; track quest.id) {
+            <div class="quest-wrapper" #cardWrapper>
+              <div class="swipe-feedback" #swipeFeedback>
+                <ion-icon name="" class="feedback-icon"></ion-icon>
+              </div>
+              
+              <div class="quest-card" [ngClass]="quest.glowClass">
+                <!-- Quest content -->
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </ion-content>
+    ```
+  </Tab>
+</Tabs>
+
+## Key Methods
+
+### loadQuests()
+
+Loads and filters quests based on selected categories.
+
+```typescript
+public loadQuests(): void {
+  console.log('Loading quests...');
+  this.applyCategoryFilter();
+}
+```
+
+### onCategorySelected()
+
+Handles category selection from the horizontal category component.
+
+```typescript
+onCategorySelected(categories: Category[]) {
+  this.selectedCategoryKeys = categories.map(c => c.name);
+  this.applyCategoryFilter();
+}
+```
+
+### handleSwipe()
+
+Processes swipe gestures to complete or delete quests.
+
+```typescript
+handleSwipe(ev: any, quest: Quest, cardEl: HTMLElement) {
+  const threshold = 150; // px to consider swipe
+  
+  if (ev.deltaX > threshold) {
+    // Swipe right: complete quest
+    this.questService.completeQuest(quest.id);
+    cardEl.style.transform = 'translateX(100%)';
+  } else if (ev.deltaX < -threshold) {
+    // Swipe left: delete quest
+    this.questService.deleteQuest(quest.id);
+    cardEl.style.transform = 'translateX(-100%)';
+  }
+}
+```
+
+## State Management
+
+The component uses a BehaviorSubject to manage state:
+
+```typescript
+private stateSubject = new BehaviorSubject<ComponentState>({
+  activeTab: 'daily',
+  userXp: 65,
+  isLoading: true,
+  processedQuests: []
+});
+
+state$: Observable<ComponentState> = this.stateSubject.asObservable();
+```
+
+## Swipe Gestures
+
+Swipe gestures are implemented using Ionic's GestureController:
+
+```typescript
+ngAfterViewInit() {
+  this.cardWrappers.forEach((cardRef, index) => {
+    const gesture: Gesture = this.gestureCtrl.create({
+      el: cardRef.nativeElement,
+      gestureName: 'swipe',
+      onMove: ev => {
+        // Move card and show feedback
+        cardRef.nativeElement.style.transform = 
+          `translateX(${ev.deltaX}px) rotate(${ev.deltaX / 20}deg)`;
+        
+        if (ev.deltaX < 0) {
+          // Show delete feedback (red)
+          feedbackEl.style.backgroundColor = 'red';
+          feedbackEl.querySelector('ion-icon')!.setAttribute('name', 'trash');
+        } else if (ev.deltaX > 0) {
+          // Show complete feedback (green)
+          feedbackEl.style.backgroundColor = 'green';
+          feedbackEl.querySelector('ion-icon')!.setAttribute('name', 'checkmark');
+        }
+      },
+      onEnd: ev => this.handleSwipe(ev, quest, cardRef.nativeElement)
+    });
+    gesture.enable(true);
+  });
+}
+```
+
+## Quest Card Structure
+
+Each quest card displays:
+
+- **Category Badge**: Shows the quest category
+- **Difficulty Stars**: Flame icons indicating difficulty (1-3)
+- **Quest Icon**: Category-specific icon
+- **Title & Description**: Quest details
+- **Reward Section**: XP rewards and badges
+- **Progress Bar**: Shows completion progress (if applicable)
+- **Completion Overlay**: Displayed when quest is completed
+
+## Usage Example
+
+```typescript
+import { QuestCardsComponent } from './components/quest-cards/quest-cards.component';
+
+@Component({
+  template: `
+    <app-quest-cards></app-quest-cards>
+  `
+})
+export class QuestsPage {}
+```
+
+## Integration with Services
+
+The component integrates with:
+
+- **QuestService**: For CRUD operations on quests
+- **QuestSharedService**: For refresh notifications across components
+- **CategoryService**: For category filtering
+
+```typescript
+// Subscribe to refresh events
+this.questSharedService.refresh$.subscribe(() => {
+  this.applyCategoryFilter();
+});
+
+// Subscribe to quest updates
+this.questService.getQuests().subscribe(() => {
+  this.applyCategoryFilter();
+});
+```
+
+## Performance Optimizations
+
+<Note>
+  The component uses `ChangeDetectionStrategy.OnPush` for better performance and `trackBy` functions to optimize rendering.
+</Note>
+
+```typescript
+trackByQuestId(index: number, quest: Quest): string {
+  return quest.id;
+}
+```
+
+## Difficulty Display
+
+Difficulty is displayed using flame icons:
+
+```typescript
+getDifficultyArray(difficulty: number): boolean[] {
+  return [
+    difficulty >= 1,
+    difficulty >= 2,
+    difficulty >= 3
+  ];
+}
+```
+
+## Styling Classes
+
+The component uses realm-specific color classes:
+
+- `realm-green`: Code/Development quests
+- `realm-purple`: Design quests  
+- `realm-orange`: Admin/DevOps quests
+- `realm-blue`: Mind/Learning quests
+
+## Related Components
+
+- [Quest Form](/components/quest-form) - For creating/editing quests
+- [Category Selector](/components/category-selector) - For filtering by category
+- [Shared Components](/components/shared-components) - Common UI components

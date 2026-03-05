@@ -1,0 +1,372 @@
+---
+title: 'Gamification'
+description: 'Explore the XP, difficulty levels, and visual effects that make Tareas engaging'
+---
+
+## Overview
+
+Tareas transforms task management into an engaging RPG-style experience through gamification mechanics. By combining difficulty levels, XP rewards, visual effects, and progress tracking, users stay motivated to complete their quests.
+
+<Info>
+  Gamification in Tareas isn't just cosmetic - it's designed to provide tangible psychological rewards that boost productivity and engagement.
+</Info>
+
+## Difficulty Levels
+
+Every quest has one of three difficulty levels, represented by flame icons:
+
+### Difficulty System
+
+```typescript
+difficultyMap = { 
+  1: 'Fácil',    // Easy - 1 flame
+  2: 'Medio',    // Medium - 2 flames
+  3: 'Difícil'   // Hard - 3 flames
+};
+```
+
+<CardGroup cols={3}>
+  <Card title="Easy" icon="fire">
+    **Difficulty: 1**
+    
+    Simple tasks that require minimal effort
+    
+    - Default XP: ~100-200
+    - One flame icon
+    - Quick wins
+  </Card>
+
+  <Card title="Medium" icon="fire">
+    **Difficulty: 2**
+    
+    Standard tasks requiring moderate effort
+    
+    - Default XP: 250
+    - Two flame icons
+    - Balanced challenge
+  </Card>
+
+  <Card title="Hard" icon="fire">
+    **Difficulty: 3**
+    
+    Complex tasks requiring significant effort
+    
+    - Default XP: 400+
+    - Three flame icons  
+    - Major achievements
+  </Card>
+</CardGroup>
+
+### Rendering Difficulty
+
+The difficulty is converted to a boolean array for UI rendering:
+
+```typescript
+getDifficultyArray(difficulty: number): boolean[] {
+  return [
+    difficulty >= 1,  // First flame (always true)
+    difficulty >= 2,  // Second flame (medium and hard)
+    difficulty >= 3   // Third flame (hard only)
+  ];
+}
+
+// Usage in template:
+// <ion-icon *ngFor="let active of getDifficultyArray(quest.difficulty)"
+//           [name]="active ? 'flame' : 'flame-outline'"></ion-icon>
+```
+
+<Tip>
+  The `difficultyArray` enables elegant rendering of flame icons without complex conditional logic in templates.
+</Tip>
+
+## XP Rewards System
+
+Experience Points (XP) are the primary currency of progression in Tareas.
+
+### Default XP Values
+
+```typescript
+// Default quest configuration
+questData: Quest = {
+  difficulty: 2,
+  xpReward: 250,
+  reward: '+250 XP',
+  // ... other properties
+};
+```
+
+### Calculating Total XP
+
+Track cumulative XP across all quests:
+
+```typescript
+getQuestStats() {
+  const quests = this.quest$.value;
+  return {
+    total: quests.length,
+    completed: quests.filter(q => q.status === 'completed').length,
+    pending: quests.filter(q => q.status === 'pending').length,
+    inProgress: quests.filter(q => q.status === 'in-progress').length,
+    
+    // Total possible XP
+    totalXP: quests.reduce((sum, q) => sum + (q.xpReward || 0), 0),
+    
+    // XP already earned
+    completedXP: quests
+      .filter(q => q.status === 'completed')
+      .reduce((sum, q) => sum + (q.xpReward || 0), 0)
+  };
+}
+```
+
+### XP Reward Display
+
+```typescript
+// Quest reward format
+reward: `+${this.questData.xpReward} XP`
+
+// Example outputs:
+// '+250 XP'
+// '+500 XP'
+// '+100 XP'
+```
+
+## Visual Effects
+
+Tareas uses a sophisticated visual system to make quests feel alive and engaging.
+
+### Glassmorphism
+
+Cards use glassmorphic design with transparency and blur:
+
+```scss
+:root {
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-hover: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+.header-toolbar {
+  --background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(2rem);
+}
+```
+
+### Neon Glow Effects
+
+Each quest has a `glowClass` property for neon border effects:
+
+```typescript
+interface Quest {
+  glowClass: string;  // 'neon-border', 'glow-primary', 'glow-green', etc.
+  colorClass: string; // 'realm-dev', 'realm-design', etc.
+}
+
+// Quest with glow
+questData: Quest = {
+  glowClass: 'neon-border',
+  colorClass: 'color-blue',
+  // ... other properties
+};
+```
+
+### Color System
+
+Categories define unique color themes:
+
+```typescript
+getRealmColor(colorClass: string): string {
+  switch(colorClass) {
+    case 'realm-design': return '#3b82f6';    // Blue
+    case 'realm-dev': return '#a855f7';       // Purple  
+    case 'realm-marketing': return '#f97316'; // Orange
+    case 'realm-innovation': return '#ec4899';// Pink
+    case 'realm-heal': return '#ef4444';      // Red
+    case 'realm-study': return '#8b5cf6';     // Violet
+    case 'realm-funny': return '#f59e0b';     // Amber
+    default: return '#10b981';                // Green
+  }
+}
+```
+
+<Note>
+  The color system is consistent across categories, quests, and UI components, creating a cohesive visual experience.
+</Note>
+
+## Progress Tracking
+
+Track quest completion and progress:
+
+```typescript
+interface Quest {
+  status?: 'pending' | 'in-progress' | 'completed';
+  progress?: number;        // 0-100 percentage
+  completed?: boolean;      // Quick boolean check
+  completedAt?: Date;       // Completion timestamp
+  createdAt?: Date;         // Creation timestamp
+  updatedAt?: Date;         // Last update
+}
+```
+
+### Lifecycle Tracking
+
+```typescript
+// Create quest (pending)
+const newQuest: Quest = {
+  status: 'pending',
+  createdAt: new Date(),
+  progress: 0
+};
+
+// Start quest (in-progress)
+quest.status = 'in-progress';
+quest.updatedAt = new Date();
+quest.progress = 35; // Optional progress tracking
+
+// Complete quest (completed)
+quest.status = 'completed';
+quest.completed = true;
+quest.completedAt = new Date();
+quest.progress = 100;
+```
+
+## Statistical Insights
+
+Gamification enables rich analytics:
+
+```typescript
+const stats = questService.getQuestStats();
+
+// Example output:
+{
+  total: 25,           // Total quests
+  completed: 10,       // Completed quests
+  pending: 12,         // Pending quests
+  inProgress: 3,       // In-progress quests
+  totalXP: 6250,       // Total possible XP
+  completedXP: 2500    // XP earned so far
+}
+
+// Calculate completion rate
+const completionRate = (stats.completed / stats.total) * 100; // 40%
+
+// Calculate XP progress
+const xpProgress = (stats.completedXP / stats.totalXP) * 100; // 40%
+```
+
+## Filtering by Difficulty
+
+Users can filter quests by difficulty level:
+
+```typescript
+// Get all hard quests
+const hardQuests = questService.getQuestsByDifficulty(3);
+
+// Get all easy quests
+const easyQuests = questService.getQuestsByDifficulty(1);
+
+// Implementation
+getQuestsByDifficulty(difficulty: number): Quest[] {
+  return this.quest$.value.filter(
+    quest => quest.difficulty === difficulty
+  );
+}
+```
+
+## Badges System
+
+Quests can award badges for achievements:
+
+```typescript
+interface Quest {
+  badges: string[];  // Array of badge identifiers
+}
+
+// Example quest with badges
+const quest: Quest = {
+  title: 'Complete 10 Dev Quests',
+  badges: ['dev-master', 'speed-runner', 'perfectionist'],
+  // ... other properties
+};
+```
+
+<Tip>
+  Badges provide additional motivation beyond XP, allowing users to collect achievements and showcase expertise.
+</Tip>
+
+## Motivation Mechanics
+
+The gamification system is designed around core psychological principles:
+
+<CardGroup cols={2}>
+  <Card title="Clear Goals" icon="target">
+    Every quest has explicit difficulty, XP, and completion criteria
+  </Card>
+
+  <Card title="Immediate Feedback" icon="bolt">
+    Visual effects and XP rewards provide instant gratification
+  </Card>
+
+  <Card title="Progress Tracking" icon="chart-line">
+    Stats show completion rates and XP progress over time
+  </Card>
+
+  <Card title="Visual Appeal" icon="eye">
+    Neon glows, glassmorphism, and themed colors make tasks engaging
+  </Card>
+
+  <Card title="Achievement System" icon="trophy">
+    Badges and milestones provide long-term goals
+  </Card>
+
+  <Card title="Difficulty Choice" icon="sliders">
+    Users can tackle easy wins or challenging quests based on energy
+  </Card>
+</CardGroup>
+
+## Real-World Example
+
+Here's a complete gamified quest:
+
+```typescript
+const gamifiedQuest: Quest = {
+  id: 'quest-12345',
+  title: 'Implement Authentication System',
+  description: 'Build JWT-based auth with refresh tokens',
+  category: 'dev',
+  kingdom: 'frontend',
+  
+  // Gamification properties
+  difficulty: 3,              // Hard quest
+  xpReward: 500,              // High XP reward
+  reward: '+500 XP',
+  badges: ['security-expert'],
+  
+  // Visual effects
+  icon: 'terminal',
+  colorClass: 'realm-dev',    // Purple theme
+  glowClass: 'glow-purple',   // Purple neon glow
+  
+  // Progress tracking
+  status: 'in-progress',
+  progress: 60,
+  createdAt: new Date('2026-03-01'),
+  updatedAt: new Date('2026-03-05'),
+  
+  // Metadata
+  tags: ['TRABAJO PROFUNDO', 'BACKEND'],
+  dueDate: '2026-03-10'
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quests" icon="flag" href="/concepts/quests">
+    Learn more about the Quest data model
+  </Card>
+  
+  <Card title="Categories" icon="folder-tree" href="/concepts/categories">
+    Explore how Categories provide theming
+  </Card>
+</CardGroup>

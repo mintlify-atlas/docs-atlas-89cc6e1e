@@ -1,0 +1,271 @@
+---
+title: Managing Categories
+description: Create, edit, and delete quest categories in Tareas
+---
+
+Categories help organize your quests by theme or project type. Tareas includes default categories and allows you to create custom ones.
+
+## Default Categories
+
+Tareas ships with 8 pre-configured categories:
+
+| Category | Icon | Color Theme | Description |
+|----------|------|-------------|-------------|
+| Diseño | `brush` | realm-design | Design and UX work |
+| Desarrollo | `terminal` | realm-dev | Development tasks |
+| Marketing | `analytics` | realm-marketing | Marketing activities |
+| Principal | `star` | realm-circle | Primary/important tasks |
+| Innovación | `rocket` | realm-innovation | Innovation projects |
+| Salud | `heart` | realm-heal | Health and wellness |
+| Estudio | `school` | realm-study | Learning and study |
+| Diversión | `happy` | realm-funny | Fun activities |
+
+## Category Data Model
+
+Categories are defined by the following structure:
+
+```typescript
+interface Category {
+  id: string;
+  key: 'design' | 'dev' | 'marketing' | 'primary' | 
+        'innovation' | 'strategy' | 'heal' | 'study' | 'funny';
+  name: string;
+  colorClass: string;
+  icon: string;
+}
+```
+
+## Viewing Categories
+
+Navigate to the Categories page to see all available categories. Categories are displayed as cards with:
+
+- Category name
+- Subtitle showing "Reino de {name}"
+- Progress indicator (level and completion)
+- Color-coded neon border effects
+
+```html
+<app-card-category 
+  [title]="categoria.name" 
+  [subtitle]="'Reino de ' + categoria.name" 
+  [level]="4" 
+  [progress]="3"
+  [color]="$any(categoria.colorClass)" 
+  [icon]="categoria.icon">
+</app-card-category>
+```
+
+## Creating a New Category
+
+<Steps>
+  <Step title="Open Category Creation">
+    From the Categories page, tap the **+** button or navigate to `/category/add`.
+    
+    The form header will display "CREAR CATEGORÍA" (Create Category).
+  </Step>
+
+  <Step title="Enter Category Name">
+    Give your category a descriptive name:
+
+    ```html
+    <div class="input-box">
+      <input 
+        type="text" 
+        placeholder="Ej: Desarrollo Frontend" 
+        [(ngModel)]="categoryData.name"
+        class="native-input" 
+      />
+    </div>
+    ```
+  </Step>
+
+  <Step title="Select an Icon">
+    Choose from the available icons. The icon grid displays all category icons:
+
+    ```html
+    <div class="icon-selector grid grid-cols-5 gap-3">
+      <button 
+        *ngFor="let cat of categories" 
+        type="button" 
+        class="icon-btn"
+        [class.selected]="categoryData.icon === cat.icon" 
+        (click)="selectIcon(cat.icon)">
+        <ion-icon [name]="cat.icon" class="text-2xl"></ion-icon>
+      </button>
+    </div>
+    ```
+
+    <Note>
+      Selecting an icon automatically assigns the associated color theme and key.
+    </Note>
+
+    ```typescript
+    private setCategoryPropertiesByIcon(icon: string) {
+      const matched = this.categories.find(cat => cat.icon === icon);
+      if (matched) {
+        this.categoryData.key = matched.key;
+        this.categoryData.colorClass = matched.colorClass;
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Save the Category">
+    Tap **CREAR** to save your new category:
+
+    ```typescript
+    async saveCategory() {
+      if (!this.isFormValid()) {
+        await this.showToast('Completa todos los campos', 'warning');
+        return;
+      }
+
+      this.setCategoryPropertiesByIcon(this.categoryData.icon);
+
+      if (this.isEditing) {
+        this.categoryService.update(this.categoryData.id, this.categoryData);
+        await this.showToast('Categoría actualizada', 'success');
+      } else {
+        this.categoryService.create(this.categoryData);
+        await this.showToast('Categoría creada', 'success');
+      }
+      
+      this.goToCategoriesList();
+    }
+    ```
+
+    The category is stored in localStorage and immediately available for use in quests.
+  </Step>
+</Steps>
+
+## Editing Categories with Swipe Gestures
+
+Categories use Ionic's `ion-item-sliding` for intuitive gesture-based actions:
+
+```html
+<ion-item-sliding #slidingItem class="card-wrapper sliding-card">
+  <!-- Category card -->
+  <ion-item lines="none" class="item-card">
+    <app-card-category 
+      [title]="categoria.name" 
+      [subtitle]="'Reino de ' + categoria.name" 
+      [level]="4" 
+      [progress]="3"
+      [color]="$any(categoria.colorClass)" 
+      [icon]="categoria.icon">
+    </app-card-category>
+  </ion-item>
+
+  <!-- Swipe left → delete -->
+  <ion-item-options side="start">
+    <ion-item-option 
+      color="danger" 
+      (click)="deleteCategory(categoria.id); slidingItem.close()">
+      <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+    </ion-item-option>
+  </ion-item-options>
+
+  <!-- Swipe right → edit -->
+  <ion-item-options side="end">
+    <ion-item-option 
+      color="primary" 
+      (click)="editCategory(categoria); slidingItem.close()">
+      <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+    </ion-item-option>
+  </ion-item-options>
+</ion-item-sliding>
+```
+
+### Swipe Gestures
+
+<CardGroup cols={2}>
+  <Card title="Swipe Right" icon="edit">
+    Swipe a category card to the **right** to reveal the **edit** button (blue).
+  </Card>
+  <Card title="Swipe Left" icon="trash">
+    Swipe a category card to the **left** to reveal the **delete** button (red).
+  </Card>
+</CardGroup>
+
+## Editing a Category
+
+When you tap the edit button, the category data is passed to the form:
+
+```typescript
+editCategory(categoria: Category) {
+  this.categoryFormService.categoryToEdit = { ...categoria };
+  // Navigate with ID for editing
+  this.router.navigate(['/category/add', categoria.id]);
+}
+```
+
+The form loads in edit mode:
+
+- Header changes to "EDITAR CATEGORÍA" (Edit Category)
+- Save button changes to "ACTUALIZAR" (Update)
+- All existing values are pre-filled
+
+```typescript
+private loadCategory() {
+  const categoryId = this.route.snapshot.paramMap.get('id');
+  if (categoryId) {
+    const category = this.categoryService.getById(categoryId);
+    if (category) {
+      this.categoryData = { ...category };
+      this.isEditing = true;
+      return;
+    }
+  }
+  
+  // New category
+  this.categoryData = {
+    id: crypto.randomUUID(),
+    name: '',
+    key: 'design',
+    icon: 'folder',
+    colorClass: 'realm-blue'
+  };
+}
+```
+
+## Deleting a Category
+
+Tap the delete button (trash icon) to remove a category:
+
+```typescript
+deleteCategory(categoryId: string) {
+  this.categoryService.delete(categoryId);
+  // Remove from local array to refresh UI
+  this.categoryData = this.categoryData.filter(c => c.id !== categoryId);
+}
+```
+
+<Warning>
+  Deleting a category does not delete quests associated with it. Consider reassigning quests before deleting a category.
+</Warning>
+
+## Category Initialization
+
+On first load, default categories are automatically saved to localStorage:
+
+```typescript
+ngOnInit() {
+  const savedCategories = this.categoryService.getAll();
+
+  if (savedCategories && savedCategories.length > 0) {
+    this.categoryData = savedCategories;
+  } else {
+    // Use default categories
+    this.categoryData = [...this.defaultCategories];
+    // Save to localStorage
+    this.categoryData.forEach(cat => this.categoryService.create(cat));
+  }
+}
+```
+
+## Source Code Reference
+
+- Categories list: `src/app/components/categories/categories.component.ts:26`
+- Category form: `src/app/components/edits/edit-category/edit-category.component.ts:18`
+- Category model: `src/app/common/models/category.model.ts:1`
+- Category service: `src/app/common/services/category.service.ts`
